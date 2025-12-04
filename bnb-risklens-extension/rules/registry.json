@@ -1,0 +1,88 @@
+{
+  "version": "1.0.0",
+  "lastUpdated": "2025-12-04",
+  "rules": [
+    {
+      "id": "R1",
+      "name": "Unlimited Approval",
+      "description": "Token requests unlimited approval amount",
+      "category": "approval",
+      "severity": "high",
+      "points": 2,
+      "critical": true,
+      "recommendation": "Use SafeApprove to set temporary allowances instead of unlimited approval"
+    },
+    {
+      "id": "R2",
+      "name": "Unverified Contract",
+      "description": "Contract source code is not verified on BSCScan",
+      "category": "contract",
+      "severity": "high",
+      "points": 2,
+      "critical": true,
+      "recommendation": "Verify contract source code before interacting. Unverified contracts cannot be audited."
+    },
+    {
+      "id": "R3",
+      "name": "New Contract with Low Activity",
+      "description": "Contract is recently deployed with minimal transactions",
+      "category": "contract",
+      "severity": "medium",
+      "points": 1,
+      "critical": false,
+      "recommendation": "Exercise caution with new contracts. Wait for more activity and community validation."
+    },
+    {
+      "id": "R4",
+      "name": "Very Few Holders",
+      "description": "Token has less than 50 unique holders",
+      "category": "market",
+      "severity": "medium",
+      "points": 1,
+      "critical": false,
+      "recommendation": "Low holder count indicates limited adoption. Could be early stage or a scam."
+    },
+    {
+      "id": "R5",
+      "name": "Low Liquidity",
+      "description": "Token has insufficient liquidity on DEX (< $10k)",
+      "category": "market",
+      "severity": "medium",
+      "points": 1,
+      "critical": false,
+      "recommendation": "Low liquidity leads to high slippage and difficulty selling. Avoid or use very small amounts."
+    },
+    {
+      "id": "R6",
+      "name": "Honeypot Bytecode Pattern",
+      "description": "Contract bytecode contains suspicious honeypot patterns",
+      "category": "technical",
+      "severity": "high",
+      "points": 2,
+      "critical": false,
+      "recommendation": "AVOID this token. Honeypot patterns indicate you won't be able to sell after buying."
+    }
+  ],
+  "scoring": {
+    "low": {
+      "range": "0-2",
+      "description": "Token appears relatively safe with minimal risk factors"
+    },
+    "medium": {
+      "range": "3-4",
+      "description": "Token shows some concerning patterns. Exercise caution."
+    },
+    "high": {
+      "range": "5+",
+      "description": "Token exhibits dangerous patterns. High risk of scam or loss."
+    }
+  },
+  "criticalCombinations": [
+    {
+      "rules": ["R1", "R2"],
+      "description": "Unlimited approval + Unverified contract",
+      "forcedLevel": "HIGH",
+      "warning": "This combination is extremely dangerous and could result in wallet drainage."
+    }
+  ]
+}
