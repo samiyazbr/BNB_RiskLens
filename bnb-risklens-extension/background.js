@@ -38,6 +38,11 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       handleEthereumRequest(request.payload, sendResponse);
       return true; // Keep channel open for async response
     
+    case 'evaluateToken':
+      // Handle automatic token evaluation from content script
+      handleTokenEvaluation(request.tokenAddress, sendResponse);
+      return true;
+    
     case 'evaluateRisk':
       handleRiskEvaluation(request.data, sendResponse);
       return true;
@@ -488,6 +493,63 @@ function handleGetStoredRisks(sendResponse) {
       data: result.publishHistory || [] 
     });
   });
+}
+
+/**
+ * Handle token evaluation request from automatic approval interception
+ */
+async function handleTokenEvaluation(tokenAddress, sendResponse) {
+  console.log('🔍 Evaluating token for approval:', tokenAddress);
+  
+  try {
+    // Import rule engine
+    const ruleEngineModule = await import(chrome.runtime.getURL('src/ruleEngine.js'));
+    const { evaluateRules } = ruleEngineModule;
+    
+    // Import score calculator
+    const scoreModule = await import(chrome.runtime.getURL('src/score.js'));
+    const { calculateRiskScore } = scoreModule;
+    
+    // Import data fetcher
+    const dataModule = await import(chrome.runtime.getURL('src/utils/fetchOnChainData.js'));
+    const { fetchOnChainData } = dataModule;
+    
+    // Fetch on-chain data
+    const onChainData = await fetchOnChainData(tokenAddress);
+    
+    if (!onChainData || onChainData.error) {
+      sendResponse({ 
+        error: 'Failed to fetch token data',
+        level: 'MEDIUM'
+      });
+      return;
+    }
+    
+    // Evaluate rules
+    const ruleResults = await evaluateRules(tokenAddress, onChainData);
+    
+    // Calculate risk score
+    const riskAssessment = calculateRiskScore(ruleResults);
+    
+    // Get triggered rule descriptions
+    const triggeredRules = ruleResults
+      .filter(r => r.triggered)
+      .map(r => r.description || r.ruleName);
+    
+    sendResponse({
+      level: riskAssessment.level,
+      score: riskAssessment.score,
+      triggeredRules: triggeredRules,
+      tokenAddress: tokenAddress
+    });
+    
+  } catch (error) {
+    console.error('❌ Error evaluating token:', error);
+    sendResponse({ 
+      error: error.message,
+      level: 'MEDIUM'
+    });
+  }
 }
 
 // Keep service worker alive

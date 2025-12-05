@@ -1,8 +1,9 @@
 /**
  * BNB RiskLens - Content Script
- * Bridges communication between extension popup and the page's MetaMask provider
+ * Proactive token monitoring - analyzes tokens BEFORE user clicks approve
  */
 
+<<<<<<< HEAD
 // Prevent double-injection: content scripts may be injected multiple times
 // (manifest + programmatic injection). Use a marker on window to make this
 // file idempotent.
@@ -20,22 +21,42 @@ if (window.__risklens_content_script_loaded) {
   debugLog('Content script is loading on: ' + window.location.href);
   debugLog('window.ethereum type: ' + typeof window.ethereum);
   debugLog('window.ethereum value: ' + (window.ethereum ? 'EXISTS' : 'NOT FOUND'));
-
-// Detect and cache MetaMask provider availability
-let hasMetaMask = false;
-
-function checkForMetaMask() {
-  const before = hasMetaMask;
-  if (typeof window !== 'undefined' && window.ethereum) {
-    hasMetaMask = true;
-    if (!before) debugLog('✅ MetaMask DETECTED on page');
-  } else {
-    hasMetaMask = false;
-    if (before) debugLog('❌ MetaMask LOST on page');
-  }
-  return hasMetaMask;
+=======
+const DEBUG = true;
+function debugLog(message) {
+  if (DEBUG) console.log(`[RiskLens ContentScript] ${message}`);
 }
 
+<<<<<<< HEAD
+debugLog('🔶 BNB RiskLens: Proactive monitoring mode');
+=======
+debugLog('Content script is loading on: ' + window.location.href);
+debugLog('window.ethereum type: ' + typeof window.ethereum);
+debugLog('window.ethereum value: ' + (window.ethereum ? 'EXISTS' : 'NOT FOUND'));
+>>>>>>> 48553c873558e32fe0b67030413725756a2c0aad
+>>>>>>> 555702df5376a4fb8638da62a4e0d981a88d6edc
+
+// Inject proactive monitor script
+function injectProactiveMonitor() {
+  debugLog('Injecting proactive monitor...');
+  
+  const monitorScript = document.createElement('script');
+  monitorScript.src = chrome.runtime.getURL('proactive-monitor.js');
+  monitorScript.onload = function() {
+    this.remove();
+    debugLog('✅ Proactive monitor loaded');
+  };
+  (document.head || document.documentElement).appendChild(monitorScript);
+}
+
+<<<<<<< HEAD
+// Listen for proactive evaluation requests from the page
+window.addEventListener('risklens-proactive-request', async (event) => {
+  debugLog('📥 Received proactive evaluation request');
+  
+  const { eventId, tokenAddress } = event.detail;
+  
+=======
 // Check immediately
 debugLog('Initial MetaMask check...');
 debugLog('window.ethereum type at check: ' + typeof window.ethereum);
@@ -228,9 +249,26 @@ async function waitForMetaMask(maxWaitTime = 10000, interval = 100) {
  * Handle Ethereum RPC requests using the page's MetaMask provider
  */
 async function handleEthereumRequest(payload, sendResponse) {
+>>>>>>> 48553c873558e32fe0b67030413725756a2c0aad
   try {
-    debugLog(`handleEthereumRequest called with method: ${payload?.method}`);
+    // Request evaluation from background script
+    const response = await chrome.runtime.sendMessage({
+      action: 'evaluateToken',
+      tokenAddress: tokenAddress
+    });
     
+    debugLog('✅ Got risk evaluation: ' + response.risk?.level);
+    
+    // Send response back to page
+    window.dispatchEvent(new CustomEvent('risklens-proactive-response', {
+      detail: {
+        eventId: eventId,
+        risk: response.risk
+      }
+    }));
+    
+<<<<<<< HEAD
+=======
     if (typeof window === 'undefined') {
       debugLog('❌ Window is undefined');
       sendResponse({ error: 'Window is undefined' });
@@ -267,6 +305,7 @@ async function handleEthereumRequest(payload, sendResponse) {
         debugLog('Failed to dispatch eip6963:requestProvider: ' + e?.message);
       }
 
+<<<<<<< HEAD
       // Use timeoutMs hint from the background if provided (longer for eth_requestAccounts)
       const timeoutHint = payload?.timeoutMs || 10000;
       const result = await sendToPageRequest({ method, params }, timeoutHint);
@@ -278,15 +317,28 @@ async function handleEthereumRequest(payload, sendResponse) {
       sendResponse({ error: err?.message || 'MetaMask provider not available via page bridge' });
       return;
     }
+=======
+    debugLog(`✅ MetaMask response for ${method}: ` + JSON.stringify(result).substring(0, 100));
+    sendResponse(result);
+>>>>>>> 48553c873558e32fe0b67030413725756a2c0aad
+>>>>>>> 555702df5376a4fb8638da62a4e0d981a88d6edc
   } catch (error) {
-    debugLog(`❌ MetaMask error: ${error.message}`);
-    sendResponse({ 
-      error: error.message || 'Unknown error occurred' 
-    });
+    debugLog('❌ Error evaluating token: ' + error.message);
+    
+    window.dispatchEvent(new CustomEvent('risklens-proactive-response', {
+      detail: {
+        eventId: eventId,
+        risk: { level: 'UNKNOWN', error: error.message }
+      }
+    }));
   }
+});
+
+<<<<<<< HEAD
 }
 
-debugLog('Content script setup complete');
-
-}
-
+=======
+// Initialize
+injectProactiveMonitor();
+debugLog('✅ Content script initialized in proactive mode');
+>>>>>>> 555702df5376a4fb8638da62a4e0d981a88d6edc

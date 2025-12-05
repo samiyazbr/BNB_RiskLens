@@ -18,11 +18,78 @@ export default function Features() {
               Features
             </h1>
             <p className="text-xl text-gray-400 max-w-2xl mx-auto">
-              Everything you need to evaluate token risk and protect your wallet on BNB Chain
+              Proactive protection with transparent risk evaluation - see warnings BEFORE you click approve
             </p>
+            <div className="bg-primary/10 border border-primary/30 rounded-lg p-4 mt-6 max-w-2xl mx-auto">
+              <p className="text-primary font-semibold">⚡ Proactive Token Detection</p>
+              <p className="text-sm text-gray-300 mt-1">
+                BNB RiskLens automatically detects tokens and shows risk badges the moment they appear - BEFORE you click!
+              </p>
+            </div>
           </motion.div>
 
           <div className="space-y-20">
+            {/* Proactive Detection */}
+            <FeatureSection
+              title="⚡ Proactive Token Detection"
+              description="See risk warnings BEFORE you interact. BNB RiskLens automatically scans DEX pages:"
+            >
+              <div className="bg-light p-8 rounded-xl border border-gray-800">
+                <div className="grid md:grid-cols-2 gap-8">
+                  <div>
+                    <h4 className="text-lg font-semibold mb-3 text-primary">How It Works</h4>
+                    <ol className="space-y-3 text-gray-300">
+                      <li className="flex gap-3">
+                        <span className="text-primary">1.</span>
+                        <span>You visit any DEX (PancakeSwap, Uniswap, etc.)</span>
+                      </li>
+                      <li className="flex gap-3">
+                        <span className="text-primary">2.</span>
+                        <span>Token addresses appear on the page</span>
+                      </li>
+                      <li className="flex gap-3">
+                        <span className="text-primary">3.</span>
+                        <span>BNB RiskLens detects them automatically</span>
+                      </li>
+                      <li className="flex gap-3">
+                        <span className="text-primary">4.</span>
+                        <span>Risk badges appear instantly (✅/⚠️/🚨)</span>
+                      </li>
+                      <li className="flex gap-3">
+                        <span className="text-primary">5.</span>
+                        <span>You see warnings BEFORE clicking approve!</span>
+                      </li>
+                    </ol>
+                  </div>
+                  <div>
+                    <h4 className="text-lg font-semibold mb-3 text-primary">What You See</h4>
+                    <ul className="space-y-3 text-gray-300">
+                      <li className="flex gap-3">
+                        <span className="text-green-400">✓</span>
+                        <span>Inline risk badges next to tokens</span>
+                      </li>
+                      <li className="flex gap-3">
+                        <span className="text-green-400">✓</span>
+                        <span>Color-coded: ✅ LOW / ⚠️ MEDIUM / 🚨 HIGH</span>
+                      </li>
+                      <li className="flex gap-3">
+                        <span className="text-green-400">✓</span>
+                        <span>Click badge for detailed risk report</span>
+                      </li>
+                      <li className="flex gap-3">
+                        <span className="text-green-400">✓</span>
+                        <span>Non-intrusive, doesn't block workflow</span>
+                      </li>
+                      <li className="flex gap-3">
+                        <span className="text-green-400">✓</span>
+                        <span>Instant updates as new tokens appear</span>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </FeatureSection>
+
             {/* Rule Engine */}
             <FeatureSection
               title="🔍 6 Deterministic Rules"

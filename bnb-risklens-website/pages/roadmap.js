@@ -21,7 +21,9 @@ export default function Roadmap() {
               status="completed"
               items={[
                 "✅ Build Chrome extension with 6 deterministic rules",
-                "✅ Implement SafeApprove flow",
+                "✅ Implement proactive token detection",
+                "✅ Create inline risk badge system (✅/⚠️/🚨)",
+                "✅ Show warnings BEFORE users click approve",
                 "✅ Deploy RiskFeed smart contract on BNB Testnet",
                 "✅ Create demo tokens (Safe, Medium Risk, Honeypot)",
                 "✅ Launch documentation website",

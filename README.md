@@ -1,12 +1,21 @@
 # 🔶 BNB RiskLens
 
-**Transparent Token Risk Evaluation for BNB Chain**
+**Proactive Protection - See Risk Warnings BEFORE You Click Approve**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Chrome Extension](https://img.shields.io/badge/Chrome-Extension-brightgreen)](https://github.com/samiyazbr/BNB_RiskLens)
 [![BNB Chain](https://img.shields.io/badge/BNB-Chain-F0B90B)](https://www.bnbchain.org/)
 
-BNB RiskLens is a comprehensive security tool that evaluates token risk using **deterministic, transparent rules**. No black-box machine learning. No hidden algorithms. Just clear, verifiable risk assessment for BNB Chain tokens.
+BNB RiskLens is a comprehensive security tool that **automatically detects tokens on DEX pages** and shows risk badges using **deterministic, transparent rules**. No black-box machine learning. No hidden algorithms. Just proactive warnings with clear, verifiable risk assessment.
+
+## 🎉 **Proactive Token Detection!**
+
+BNB RiskLens **automatically scans DEX pages** and shows risk badges the moment tokens appear - **BEFORE you click approve**!
+
+- ✅ **Proactive Detection** - Scans pages for token addresses automatically
+- ✅ **Instant Risk Badges** - Shows ✅ LOW / ⚠️ MEDIUM / 🚨 HIGH inline badges
+- ✅ **See Warnings First** - Risk appears BEFORE you interact with approve buttons
+- ✅ **Zero Effort** - No need to manually open the extension or paste addresses
 
 ---
 
@@ -37,15 +46,32 @@ BNB RiskLens consists of three main components:
 
 ### Key Capabilities
 
-- ✅ **6 Deterministic Risk Rules** - Transparent evaluation criteria
-- ✅ **SafeApprove Flow** - Temporary allowances that auto-reset to zero
-- ✅ **On-Chain Risk Feed** - Publish and query risk assessments on the blockchain
-- ✅ **Real-Time Data Fetching** - Liquidity checks, holder counts, contract verification
-- ✅ **100% Open Source** - All code is public and auditable
+- ⚡ **Proactive Token Detection** - Automatically scans DEX pages for token addresses
+- 🏷️ **Instant Risk Badges** - Visual badges (✅/⚠️/🚨) appear before you click approve
+- 🛡️ **Real-Time Protection** - Risk warnings shown BEFORE any interaction
+- 🔍 **6 Deterministic Risk Rules** - Transparent evaluation criteria
+- 🚨 **Unlimited Approval Warnings** - Big red alerts for dangerous permissions
+- 📊 **On-Chain Risk Feed** - Publish and query risk assessments on the blockchain
+- 🔓 **100% Open Source** - All code is public and auditable
 
 ---
 
 ## ✨ Features
+
+### 🎯 Automatic Transaction Interception
+
+**The main feature!** BNB RiskLens automatically intercepts when you try to approve a token:
+
+1. **You visit any DEX** (PancakeSwap, Uniswap, etc.)
+2. **Click "Approve" or "Enable"** for a token
+3. **BNB RiskLens intercepts** before MetaMask
+4. **Beautiful modal appears** showing:
+   - Token address & spender contract
+   - Risk level: ✅ LOW / ⚠️ MEDIUM / 🚨 HIGH
+   - Specific issues detected
+   - Big warning for unlimited approvals
+5. **You decide:** Approve or Reject
+6. **Only then** does MetaMask appear (if you approved)
 
 ### Chrome Extension
 

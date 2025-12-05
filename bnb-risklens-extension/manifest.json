@@ -20,7 +20,8 @@
     {
       "matches": [
         "http://*/*",
-        "https://*/*"
+        "https://*/*",
+        "file://*/*"
       ],
       "js": ["content-script.js"],
       "run_at": "document_start",
@@ -32,8 +33,20 @@
   },
   "web_accessible_resources": [
     {
+<<<<<<< HEAD
       "resources": ["injected-provider.js", "injected-eip6963.js"],
       "matches": ["http://*/*", "https://*/*"]
+=======
+      "resources": [
+        "proactive-monitor.js",
+        "src/ruleEngine.js",
+        "src/score.js",
+        "src/utils/fetchOnChainData.js",
+        "src/utils/liquidityCheck.js",
+        "src/utils/contractMetadata.js"
+      ],
+      "matches": ["http://*/*", "https://*/*", "file://*/*"]
+>>>>>>> 555702df5376a4fb8638da62a4e0d981a88d6edc
     }
   ]
 }
