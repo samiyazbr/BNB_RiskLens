@@ -32,7 +32,7 @@
   },
   "web_accessible_resources": [
     {
-      "resources": ["injected-provider.js"],
+      "resources": ["injected-provider.js", "injected-eip6963.js"],
       "matches": ["http://*/*", "https://*/*"]
     }
   ]

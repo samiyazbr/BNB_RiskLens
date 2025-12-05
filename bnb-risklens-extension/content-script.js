@@ -3,15 +3,23 @@
  * Bridges communication between extension popup and the page's MetaMask provider
  */
 
-// Aggressive logging to debug issues
-const DEBUG = true;
-function debugLog(message) {
-  if (DEBUG) console.log(`[RiskLens ContentScript] ${message}`);
-}
+// Prevent double-injection: content scripts may be injected multiple times
+// (manifest + programmatic injection). Use a marker on window to make this
+// file idempotent.
+if (window.__risklens_content_script_loaded) {
+  try { console.log('[RiskLens ContentScript] Already loaded, skipping duplicate injection'); } catch (e) {}
+} else {
+  window.__risklens_content_script_loaded = true;
 
-debugLog('Content script is loading on: ' + window.location.href);
-debugLog('window.ethereum type: ' + typeof window.ethereum);
-debugLog('window.ethereum value: ' + (window.ethereum ? 'EXISTS' : 'NOT FOUND'));
+  // Aggressive logging to debug issues
+  const DEBUG = true;
+  function debugLog(message) {
+    if (DEBUG) console.log(`[RiskLens ContentScript] ${message}`);
+  }
+
+  debugLog('Content script is loading on: ' + window.location.href);
+  debugLog('window.ethereum type: ' + typeof window.ethereum);
+  debugLog('window.ethereum value: ' + (window.ethereum ? 'EXISTS' : 'NOT FOUND'));
 
 // Detect and cache MetaMask provider availability
 let hasMetaMask = false;
@@ -33,6 +41,93 @@ debugLog('Initial MetaMask check...');
 debugLog('window.ethereum type at check: ' + typeof window.ethereum);
 checkForMetaMask();
 debugLog(`Initial result: hasMetaMask = ${hasMetaMask}`);
+
+// Attempt to inject a page-level helper script (web_accessible_resource) which
+// can run in the page context and bridge requests if needed. This helps when
+// the extension's isolated world cannot see the real `window.ethereum`.
+function injectPageScript(resourcePath = 'injected-eip6963.js') {
+  try {
+    const url = chrome.runtime.getURL(resourcePath);
+    if (document.querySelector(`script[data-risklens-injected="1"]`)) {
+      debugLog('Page script already injected, skipping');
+      return;
+    }
+    const script = document.createElement('script');
+    script.src = url;
+    script.type = 'text/javascript';
+    script.async = false;
+    script.setAttribute('data-risklens-injected', '1');
+    const target = document.head || document.documentElement;
+    if (target) {
+      target.appendChild(script);
+      debugLog(`Injected page script: ${url}`);
+    } else {
+      window.addEventListener('DOMContentLoaded', () => {
+        const t = document.head || document.documentElement;
+        if (t) {
+          t.appendChild(script);
+          debugLog(`Injected page script after DOMContentLoaded: ${url}`);
+        }
+      });
+    }
+  } catch (e) {
+    debugLog(`Failed to inject page script: ${e?.message || e}`);
+  }
+}
+
+// Try injecting early so the page-level bridge can run before requests start
+injectPageScript('injected-eip6963.js');
+
+  // Listen for EIP-6963 provider announcements from the page
+  window.addEventListener('eip6963:announceProvider', (ev) => {
+    try {
+      debugLog('[eip6963] Provider announced from page');
+      if (ev?.detail?.provider) {
+        hasMetaMask = true;
+        debugLog('✅ Provider announced via EIP-6963');
+      }
+    } catch (e) {
+      // ignore
+    }
+  });
+
+// PostMessage bridge helpers: send an RPC payload to the page and await response
+function sendToPageRequest(payload, timeout = 10000) {
+  return new Promise((resolve, reject) => {
+    const id = `${Date.now()}-${Math.random().toString(36).slice(2,8)}`;
+    let to = null;
+    const listener = (ev) => {
+      try {
+        if (!ev.data || ev.source !== window) return;
+        const msg = ev.data;
+        if (msg.direction === 'risklens-response' && msg.id === id) {
+          window.removeEventListener('message', listener);
+          if (to) clearTimeout(to);
+          if (msg.error) return reject(new Error(msg.error));
+          return resolve(msg.result);
+        }
+      } catch (e) {
+        // ignore
+      }
+    };
+
+    window.addEventListener('message', listener);
+
+    // send the request to page script
+    try {
+      window.postMessage({ direction: 'risklens-request', id, payload }, '*');
+    } catch (e) {
+      window.removeEventListener('message', listener);
+      return reject(e);
+    }
+
+    // timeout
+    to = setTimeout(() => {
+      window.removeEventListener('message', listener);
+      reject(new Error('Timeout waiting for page provider response'));
+    }, timeout);
+  });
+}
 
 // Check on load
 window.addEventListener('load', () => {
@@ -59,6 +154,48 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     return false;
   }
 
+  if (request.action === 'handshake') {
+    debugLog('Received handshake request from background; replying ready');
+    sendResponse({ ready: true });
+    return false;
+  }
+
+  if (request.action === 'handshakeWaitProvider') {
+    debugLog('Received handshakeWaitProvider from background');
+    // If provider already announced, reply immediately.
+    if (hasMetaMask) {
+      sendResponse({ ready: true, providerAnnounced: true });
+      return false;
+    }
+
+    // Otherwise wait briefly for provider-announced postMessage from page
+    let done = false;
+    const listener = (ev) => {
+      try {
+        if (!ev.data || ev.source !== window) return;
+        if (ev.data && ev.data.direction === 'risklens-provider-announced') {
+          if (done) return;
+          done = true;
+          window.removeEventListener('message', listener);
+          hasMetaMask = true;
+          sendResponse({ ready: true, providerAnnounced: true });
+        }
+      } catch (e) {}
+    };
+
+    window.addEventListener('message', listener);
+
+    // Timeout after short period
+    setTimeout(() => {
+      if (done) return;
+      done = true;
+      window.removeEventListener('message', listener);
+      sendResponse({ ready: true, providerAnnounced: false });
+    }, 1200);
+
+    return true; // indicate async response
+  }
+
   if (request.action === 'ethereumRequest') {
     debugLog(`Handling ethereumRequest: method=${request.payload?.method}`);
     handleEthereumRequest(request.payload, sendResponse);
@@ -72,7 +209,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 /**
  * Wait for MetaMask to inject `window.ethereum` up to a timeout.
  */
-async function waitForMetaMask(maxWaitTime = 5000, interval = 100) {
+async function waitForMetaMask(maxWaitTime = 10000, interval = 100) {
   const start = Date.now();
   let attempts = 0;
   while (Date.now() - start < maxWaitTime) {
@@ -100,30 +237,47 @@ async function handleEthereumRequest(payload, sendResponse) {
       return;
     }
 
-    // If MetaMask isn't available yet, wait a short while for it to inject.
-    // Many wallets (MetaMask) inject after the content script runs; poll briefly.
-    if (!window.ethereum) {
-      debugLog('window.ethereum not found, waiting up to 5s for injection...');
-      const found = await waitForMetaMask(5000);
-      if (!found) {
-        debugLog('❌ window.ethereum did not appear within timeout');
-        sendResponse({ error: 'MetaMask not available on the current page. Please visit a DeFi site or reload.' });
+    const { method, params = [] } = payload;
+    debugLog(`🔗 Handling RPC: ${method}`);
+
+    // If provider is accessible in the content-script world (older behavior), use it
+    if (typeof window.ethereum !== 'undefined' && window.ethereum) {
+      debugLog('Using window.ethereum in content script world');
+      try {
+        const result = await window.ethereum.request({ method, params });
+        debugLog(`✅ MetaMask response for ${method}: ` + JSON.stringify(result).substring(0, 100));
+        sendResponse(result);
+        return;
+      } catch (err) {
+        debugLog(`Error from content-script ethereum.request: ${err?.message || err}`);
+        sendResponse({ error: err?.message || String(err) });
         return;
       }
-      debugLog('✅ window.ethereum appeared, proceeding with request');
     }
 
-    const { method, params = [] } = payload;
-    debugLog(`🔗 Calling window.ethereum.request: ${method}`);
+    // Otherwise, attempt EIP-6963 flow via the injected page script (postMessage)
+    try {
+      debugLog('No direct provider; attempting page bridge via postMessage');
 
-    // Call the actual MetaMask provider
-    const result = await window.ethereum.request({
-      method,
-      params
-    });
+      // Ask the page to request providers (this triggers EIP-6963 requestProvider listeners)
+      try {
+        window.dispatchEvent(new Event('eip6963:requestProvider'));
+        debugLog('Dispatched eip6963:requestProvider event');
+      } catch (e) {
+        debugLog('Failed to dispatch eip6963:requestProvider: ' + e?.message);
+      }
 
-    debugLog(`✅ MetaMask response for ${method}: ` + JSON.stringify(result).substring(0, 100));
-    sendResponse(result);
+      // Use timeoutMs hint from the background if provided (longer for eth_requestAccounts)
+      const timeoutHint = payload?.timeoutMs || 10000;
+      const result = await sendToPageRequest({ method, params }, timeoutHint);
+      debugLog(`✅ Page bridge response for ${method}: ` + JSON.stringify(result).substring(0, 100));
+      sendResponse(result);
+      return;
+    } catch (err) {
+      debugLog(`❌ Page bridge error: ${err?.message || err}`);
+      sendResponse({ error: err?.message || 'MetaMask provider not available via page bridge' });
+      return;
+    }
   } catch (error) {
     debugLog(`❌ MetaMask error: ${error.message}`);
     sendResponse({ 
@@ -133,4 +287,6 @@ async function handleEthereumRequest(payload, sendResponse) {
 }
 
 debugLog('Content script setup complete');
+
+}
 

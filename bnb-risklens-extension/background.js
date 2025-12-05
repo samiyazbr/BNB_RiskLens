@@ -134,38 +134,255 @@ async function handleEthereumRequest(payload, sendResponse) {
 
     console.log('✅ Tab URL is valid');
 
+    // Ensure content script is injected into the target tab before messaging.
+    async function ensureContentScriptInjected(tabId) {
+      try {
+        console.log('[RiskLens BG] 🔧 Ensuring content script is injected into tab', tabId);
+        await new Promise((resolve, reject) => {
+          chrome.scripting.executeScript(
+            { target: { tabId }, files: ['content-script.js'] },
+            (results) => {
+              if (chrome.runtime.lastError) {
+                console.warn('[RiskLens BG] ⚠️ scripting.executeScript failed:', chrome.runtime.lastError.message);
+                // don't reject; resolve so caller can continue and handle sendMessage errors
+                resolve(false);
+                return;
+              }
+              resolve(true);
+            }
+          );
+        });
+        // short delay to allow listeners to register
+        await new Promise((r) => setTimeout(r, 150));
+        return true;
+      } catch (e) {
+        console.warn('[RiskLens BG] ⚠️ ensureContentScriptInjected error:', e?.message || e);
+        return false;
+      }
+    }
+
+    // Attempt to detect a page-level provider (window.ethereum) by executing
+    // a short script in the page's main world. This is more reliable than
+    // asking the content script when the page hasn't loaded or a provider
+    // is injected late by another extension.
+    async function detectProviderInPage(tabId) {
+      try {
+        const results = await chrome.scripting.executeScript({
+          target: { tabId },
+          func: () => {
+            try {
+              return typeof window !== 'undefined' && !!window.ethereum;
+            } catch (e) {
+              return false;
+            }
+          },
+          world: 'MAIN'
+        });
+
+        if (!results || results.length === 0) return false;
+        return !!results[0].result;
+      } catch (e) {
+        console.warn('[RiskLens BG] ⚠️ detectProviderInPage failed:', e?.message || e);
+        return false;
+      }
+    }
+
+    const providerPresent = await detectProviderInPage(tab.id);
+    console.log(`[RiskLens BG] 🔎 Provider present in page? ${providerPresent}`);
+
+    if (!providerPresent) {
+      // Inject an inline page-level bridge into the MAIN world. Using an
+      // inline `func` avoids CSP blocking external extension script URLs.
+      async function injectBridgeInline(tabId) {
+        try {
+          await chrome.scripting.executeScript({
+            target: { tabId },
+            world: 'MAIN',
+            func: function () {
+              try {
+                if (window.__risklens_eip6963_injected) return;
+                window.__risklens_eip6963_injected = true;
+
+                console.log('[RiskLens Injected] inline bridge initializing');
+
+                function announceProvider(provider) {
+                  try {
+                    console.log('[RiskLens Injected] announcing provider via eip6963:announceProvider');
+                    const evt = new CustomEvent('eip6963:announceProvider', { detail: { provider } });
+                    window.dispatchEvent(evt);
+                    try { window.postMessage({ direction: 'risklens-provider-announced' }, '*'); } catch (e) {}
+                  } catch (e) {}
+                }
+
+                if (typeof window.ethereum !== 'undefined' && window.ethereum) {
+                  console.log('[RiskLens Injected] window.ethereum exists, announcing');
+                  announceProvider(window.ethereum);
+                }
+
+                window.addEventListener('eip6963:requestProvider', () => {
+                  if (typeof window.ethereum !== 'undefined' && window.ethereum) {
+                    announceProvider(window.ethereum);
+                  }
+                });
+
+                window.addEventListener('message', async (ev) => {
+                  try {
+                    if (!ev.data || ev.source !== window) return;
+                    const msg = ev.data;
+                    if (msg && msg.direction === 'risklens-request') {
+                      const id = msg.id;
+                      const payload = msg.payload;
+                      if (!payload || !payload.method) {
+                        window.postMessage({ direction: 'risklens-response', id, error: 'Invalid payload' }, '*');
+                        return;
+                      }
+
+                      if (typeof window.ethereum === 'undefined' || !window.ethereum) {
+                        window.postMessage({ direction: 'risklens-response', id, error: 'No provider available in page' }, '*');
+                        return;
+                      }
+
+                      try {
+                        const result = await window.ethereum.request(payload);
+                        window.postMessage({ direction: 'risklens-response', id, result }, '*');
+                      } catch (err) {
+                        window.postMessage({ direction: 'risklens-response', id, error: String(err) }, '*');
+                      }
+                    }
+                  } catch (e) {}
+                });
+
+                console.log('[RiskLens Injected] inline bridge initialized');
+              } catch (e) {
+                // swallow
+              }
+            }
+          });
+          // small delay for initialization
+          await new Promise((r) => setTimeout(r, 250));
+          return true;
+        } catch (e) {
+          console.error('[RiskLens BG] ❌ injectBridgeInline failed:', e?.message || e);
+          return false;
+        }
+      }
+
+      try {
+        console.log('[RiskLens BG] 📥 Injecting inline page-level provider bridge');
+        const injected = await injectBridgeInline(tab.id);
+        const recheck = await detectProviderInPage(tab.id);
+        console.log(`[RiskLens BG] 🔎 Provider present after inline injection? ${recheck}`);
+        if (!recheck) {
+          console.warn('[RiskLens BG] ⚠️ Provider still not present after inline injection');
+        }
+      } catch (injErr) {
+        console.error('[RiskLens BG] ❌ Exception while injecting page helper inline:', injErr?.message || injErr);
+      }
+    }
+
     // Send request to content script with promise-based callback
     try {
-      const response = await new Promise((resolve, reject) => {
-        const timeoutId = setTimeout(() => {
-          console.warn('⚠️  Tab messaging timeout after 10s');
-          reject(new Error(`Request timeout after 10s: ${method}`));
-        }, 10000);
+      // Try to proactively inject content script so sendMessage has a listener
+      await ensureContentScriptInjected(tab.id);
+
+      // Perform a short handshake to ensure the content script's message
+      // listener is active and ready. This avoids races where sendMessage
+      // reports Receiving end does not exist intermittently.
+      async function performHandshake(tabId, timeout = 1500) {
+        return new Promise((resolve) => {
+          let done = false;
+          try {
+            // Ask content script to not only indicate readiness but also whether
+            // the page bridge has announced a provider (providerAnnounced).
+            chrome.tabs.sendMessage(tabId, { action: 'handshakeWaitProvider' }, (resp) => {
+              if (done) return;
+              done = true;
+              if (chrome.runtime.lastError) {
+                console.warn('[RiskLens BG] ⚠️ Handshake failed:', chrome.runtime.lastError.message);
+                return resolve({ ready: false, providerAnnounced: false });
+              }
+              resolve({ ready: !!resp?.ready, providerAnnounced: !!resp?.providerAnnounced });
+            });
+          } catch (e) {
+            return resolve({ ready: false, providerAnnounced: false });
+          }
+          setTimeout(() => { if (!done) { done = true; resolve({ ready: false, providerAnnounced: false }); } }, timeout);
+        });
+      }
+
+      const handshakeResult = await performHandshake(tab.id, 1500);
+      console.log(`[RiskLens BG] 🔁 Handshake with content script: ready=${handshakeResult.ready}, providerAnnounced=${handshakeResult.providerAnnounced}`);
+
+        const timeoutMs = (method === 'eth_requestAccounts') ? 30000 : 10000;
+
+        const response = await new Promise((resolve, reject) => {
+          let settled = false;
+          const timeoutId = setTimeout(() => {
+            if (settled) return;
+            settled = true;
+            console.warn(`⚠️  Tab messaging timeout after ${timeoutMs / 1000}s`);
+            reject(new Error(`Request timeout after ${timeoutMs / 1000}s: ${method}`));
+          }, timeoutMs);
 
         console.log('📤 Sending message to tab:', tab.id);
-        chrome.tabs.sendMessage(
-          tab.id,
-          { 
-            action: 'ethereumRequest', 
-            payload: { method, params }
-          },
+          chrome.tabs.sendMessage(
+            tab.id,
+            { 
+              action: 'ethereumRequest', 
+              payload: { method, params, timeoutMs }
+            },
           (response) => {
+            if (settled) {
+              console.warn('[RiskLens BG] ⚠️ Late callback received after timeout — ignoring');
+              return;
+            }
+            settled = true;
             clearTimeout(timeoutId);
             console.log('📥 Got callback from sendMessage');
-            
+
             if (chrome.runtime.lastError) {
               const errorMsg = chrome.runtime.lastError?.message || '';
               console.error('❌ chrome.runtime.lastError:', errorMsg);
-              
+
               // Check if it's a "receiving end does not exist" error
               if (errorMsg.includes('Receiving end does not exist')) {
-                reject(new Error('Content script not loaded on this tab. Try reloading the page.'));
+                // Attempt to inject the content script dynamically and retry once
+                console.warn('[RiskLens BG] ⚠️  Receiving end does not exist — attempting to inject content script and retry');
+                try {
+                  chrome.scripting.executeScript(
+                    { target: { tabId: tab.id }, files: ['content-script.js'] },
+                    (injectionResults) => {
+                      if (chrome.runtime.lastError) {
+                        console.error('[RiskLens BG] ❌ Injection failed:', chrome.runtime.lastError.message);
+                        return reject(new Error('Content script not loaded and injection failed. Please reload the page.'));
+                      }
+
+                      // Small delay to allow the injected script to initialize
+                      setTimeout(() => {
+                        chrome.tabs.sendMessage(
+                          tab.id,
+                          { action: 'ethereumRequest', payload: { method, params } },
+                          (retryResponse) => {
+                            if (chrome.runtime.lastError) {
+                              console.error('[RiskLens BG] ❌ Retry sendMessage failed:', chrome.runtime.lastError.message);
+                              return reject(new Error('Content script not loaded on this tab after injection. Try reloading the page.'));
+                            }
+                            return resolve(retryResponse);
+                          }
+                        );
+                      }, 400);
+                    }
+                  );
+                } catch (injError) {
+                  console.error('[RiskLens BG] ❌ Exception while injecting content script:', injError);
+                  return reject(new Error('Failed to inject content script. Reload the page and try again.'));
+                }
               } else {
-                reject(new Error(errorMsg || 'Failed to communicate with page'));
+                return reject(new Error(errorMsg || 'Failed to communicate with page'));
               }
             } else {
               console.log('✅ Got valid response:', typeof response);
-              resolve(response);
+              return resolve(response);
             }
           }
         );
