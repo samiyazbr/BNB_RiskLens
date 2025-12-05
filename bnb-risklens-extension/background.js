@@ -104,8 +104,8 @@ function handleGetStoredRisks(sendResponse) {
   });
 }
 
-// Keep service worker alive
-chrome.alarms.create('keepAlive', { periodInMinutes: 1 });
+chrome.alarms.create("keepAlive", { periodInMinutes: 1 });
+
 chrome.alarms.onAlarm.addListener((alarm) => {
   if (alarm.name === 'keepAlive') {
     console.log('⏰ Service worker heartbeat');

@@ -1,3 +1,5 @@
+
+
 /**
  * BNB RiskLens - Content Script
  * Injected into web pages to detect DeFi interactions
