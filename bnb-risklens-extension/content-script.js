@@ -10,6 +10,8 @@ function debugLog(message) {
 }
 
 debugLog('Content script is loading on: ' + window.location.href);
+debugLog('window.ethereum type: ' + typeof window.ethereum);
+debugLog('window.ethereum value: ' + (window.ethereum ? 'EXISTS' : 'NOT FOUND'));
 
 // Detect and cache MetaMask provider availability
 let hasMetaMask = false;
@@ -28,6 +30,7 @@ function checkForMetaMask() {
 
 // Check immediately
 debugLog('Initial MetaMask check...');
+debugLog('window.ethereum type at check: ' + typeof window.ethereum);
 checkForMetaMask();
 debugLog(`Initial result: hasMetaMask = ${hasMetaMask}`);
 
@@ -48,16 +51,16 @@ setInterval(() => {
 // Listen for messages from background script
 debugLog('Setting up message listener...');
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  debugLog(`📨 Message received: ${request.action}`);
+  debugLog(`📨 Message received: action=${request.action}`);
 
   if (request.action === 'checkMetaMaskPresent') {
-    debugLog(`Responding to checkMetaMaskPresent: ${hasMetaMask}`);
+    debugLog(`Responding to checkMetaMaskPresent: hasMetaMask=${hasMetaMask}, window.ethereum=${typeof window.ethereum}`);
     sendResponse({ hasMetaMask });
     return false;
   }
 
   if (request.action === 'ethereumRequest') {
-    debugLog(`Handling ethereumRequest: ${request.payload?.method}`);
+    debugLog(`Handling ethereumRequest: method=${request.payload?.method}`);
     handleEthereumRequest(request.payload, sendResponse);
     return true; // Keep channel open for async response
   }
@@ -71,12 +74,16 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
  */
 async function waitForMetaMask(maxWaitTime = 5000, interval = 100) {
   const start = Date.now();
+  let attempts = 0;
   while (Date.now() - start < maxWaitTime) {
+    attempts++;
     if (typeof window !== 'undefined' && window.ethereum) {
+      debugLog(`✅ MetaMask found after ${attempts} attempts (${Date.now() - start}ms)`);
       return true;
     }
     await new Promise((r) => setTimeout(r, interval));
   }
+  debugLog(`❌ MetaMask NOT found after ${attempts} attempts and ${maxWaitTime}ms timeout`);
   return false;
 }
 
@@ -103,7 +110,7 @@ async function handleEthereumRequest(payload, sendResponse) {
         sendResponse({ error: 'MetaMask not available on the current page. Please visit a DeFi site or reload.' });
         return;
       }
-      debugLog('window.ethereum appeared, proceeding with request');
+      debugLog('✅ window.ethereum appeared, proceeding with request');
     }
 
     const { method, params = [] } = payload;

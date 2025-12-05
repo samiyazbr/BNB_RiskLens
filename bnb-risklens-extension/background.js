@@ -23,7 +23,8 @@ chrome.runtime.onInstalled.addListener(() => {
 
 // Listen for messages from popup or content scripts
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  console.log('📨 Message received from', sender.url?.split('/').pop() || 'unknown', ':', request.action);
+  const senderName = sender.url?.split('/').pop() || (sender.url ? 'extension' : 'unknown');
+  console.log(`[RiskLens BG] 📨 Message from ${senderName} (${sender.url}), action: ${request.action}`);
   
   switch (request.action) {
     case 'checkMetaMask':
@@ -68,29 +69,30 @@ async function checkMetaMaskAvailable() {
   try {
     const tabs = await chrome.tabs.query({ active: true });
     if (tabs.length === 0) {
-      console.log('⚠️  No active tabs found');
+      console.log('[RiskLens BG] ⚠️  No active tabs found');
       return false;
     }
 
     const tab = tabs[0];
-    console.log('📄 Checking MetaMask on tab:', tab.url);
+    console.log(`[RiskLens BG] 📄 Checking MetaMask on tab ${tab.id}: ${tab.url}`);
 
     return new Promise((resolve) => {
       const timeoutId = setTimeout(() => {
-        console.warn('⚠️  checkMetaMaskPresent timeout');
+        console.warn('[RiskLens BG] ⚠️  checkMetaMaskPresent timeout after 5s');
         resolve(false);
       }, 5000);
 
+      console.log(`[RiskLens BG] 📤 Sending checkMetaMaskPresent to tab ${tab.id}`);
       chrome.tabs.sendMessage(
         tab.id,
         { action: 'checkMetaMaskPresent' },
         (response) => {
           clearTimeout(timeoutId);
           if (chrome.runtime.lastError) {
-            console.warn('⚠️  sendMessage error:', chrome.runtime.lastError?.message);
+            console.warn(`[RiskLens BG] ⚠️  sendMessage error: ${chrome.runtime.lastError?.message}`);
             resolve(false);
           } else {
-            console.log('✅ checkMetaMaskPresent response:', response?.hasMetaMask);
+            console.log(`[RiskLens BG] ✅ checkMetaMaskPresent response: hasMetaMask=${response?.hasMetaMask}`);
             resolve(response?.hasMetaMask || false);
           }
         }
@@ -109,20 +111,19 @@ async function checkMetaMaskAvailable() {
 async function handleEthereumRequest(payload, sendResponse) {
   try {
     const { method, params = [] } = payload;
-    console.log('🔗 Routing Ethereum request:', method);
+    console.log(`[RiskLens BG] 🔗 Routing Ethereum request: ${method}`);
 
     // Get the active tab
     const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
     const tab = tabs[0];
     
     if (!tab) {
-      console.warn('⚠️  No active tab found');
+      console.warn('[RiskLens BG] ⚠️  No active tab found');
       sendResponse({ error: 'No active tab found. Please visit any website first.' });
       return;
     }
 
-    console.log('📄 Target tab URL:', tab.url);
-    console.log('📄 Tab ID:', tab.id);
+    console.log(`[RiskLens BG] 📄 Target tab: ID=${tab.id}, URL=${tab.url}`);
 
     // Check if the tab URL is allowed for content scripts
     if (!isValidTabForMessaging(tab.url)) {
