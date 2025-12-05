@@ -70,7 +70,7 @@ body {
   background: var(--text-secondary);
 }
 
-.status-dot.status-connected {
+.status-dot.status-ed {
   background: var(--success-color);
   box-shadow: 0 0 8px var(--success-color);
 }

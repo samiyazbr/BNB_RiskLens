@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>RiskLens Debug Helper</title>
+    <style>
+        body {
+            font-family: monospace;
+            padding: 20px;
+            background: #f0f0f0;
+        }
+        .container {
+            max-width: 600px;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #ff8c00;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .success {
+            background: #90EE90;
+            color: #006400;
+        }
+        .error {
+            background: #FFB6C6;
+            color: #8B0000;
+        }
+        .info {
+            background: #ADD8E6;
+            color: #00008B;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 10px 5px 10px 0;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            background: #ff8c00;
+            color: white;
+            font-weight: bold;
+        }
+        button:hover {
+            background: #ff7700;
+        }
+        pre {
+            background: #f5f5f5;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+        #log {
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔶 RiskLens Debug Helper</h1>
+        
+        <h2>Connection Status</h2>
+        <div id="status"></div>
+        
+        <h2>Tests</h2>
+        <button onclick="testContentScript()">Test Content Script</button>
+        <button onclick="testMetaMask()">Test MetaMask Detection</button>
+        <button onclick="testEthereumRequest()">Test Ethereum Request</button>
+        <button onclick="clearLog()">Clear Log</button>
+        
+        <h2>Debug Log</h2>
+        <div id="log"></div>
+    </div>
+
+    <script>
+        const logDiv = document.getElementById('log');
+        const statusDiv = document.getElementById('status');
+
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const entry = document.createElement('div');
+            entry.textContent = `[${timestamp}] ${message}`;
+            entry.style.color = type === 'error' ? 'red' : type === 'success' ? 'green' : 'black';
+            logDiv.appendChild(entry);
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        function clearLog() {
+            logDiv.innerHTML = '';
+        }
+
+        async function updateStatus() {
+            try {
+                const response = await chrome.runtime.sendMessage({ action: 'checkMetaMask' });
+                if (response.hasMetaMask) {
+                    statusDiv.innerHTML = '<div class="status success">✅ MetaMask Available</div>';
+                    log('MetaMask detected', 'success');
+                } else {
+                    statusDiv.innerHTML = '<div class="status error">❌ MetaMask Not Available</div>';
+                    log('MetaMask not available', 'error');
+                }
+            } catch (error) {
+                statusDiv.innerHTML = '<div class="status error">❌ Background Script Error</div>';
+                log(`Background error: ${error.message}`, 'error');
+            }
+        }
+
+        async function testContentScript() {
+            log('Testing content script connection...');
+            try {
+                const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+                if (!tabs[0]) {
+                    log('No active tab found', 'error');
+                    return;
+                }
+                
+                const tab = tabs[0];
+                log(`Active tab: ${tab.url}`, 'info');
+                
+                try {
+                    const response = await chrome.tabs.sendMessage(tab.id, { action: 'checkMetaMaskPresent' });
+                    if (response.hasMetaMask) {
+                        log('✅ Content script responsive, MetaMask found', 'success');
+                    } else {
+                        log('⚠️ Content script responsive, but MetaMask not on page', 'info');
+                    }
+                } catch (error) {
+                    log(`❌ Content script not responding: ${error.message}`, 'error');
+                }
+            } catch (error) {
+                log(`Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function testMetaMask() {
+            log('Testing MetaMask availability...');
+            await updateStatus();
+        }
+
+        async function testEthereumRequest() {
+            log('Testing Ethereum request (eth_chainId)...');
+            try {
+                const response = await chrome.runtime.sendMessage({
+                    action: 'ethereumRequest',
+                    payload: { method: 'eth_chainId' }
+                });
+                if (response.error) {
+                    log(`Error: ${response.error}`, 'error');
+                } else {
+                    log(`✅ ChainId: ${response}`, 'success');
+                }
+            } catch (error) {
+                log(`Error: ${error.message}`, 'error');
+            }
+        }
+
+        // Initial status check
+        window.addEventListener('load', () => {
+            log('Debug helper loaded');
+            updateStatus();
+        });
+    </script>
+</body>
+</html>

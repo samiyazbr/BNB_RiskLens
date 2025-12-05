@@ -50,17 +50,37 @@ document.addEventListener('DOMContentLoaded', initialize);
 async function initialize() {
   console.log('🔶 BNB RiskLens initializing...');
   
-  // Check if MetaMask is installed
-  if (typeof window.ethereum === 'undefined') {
-    showError('MetaMask not detected. Please install MetaMask to use this extension.');
-    return;
-  }
-  
   // Set up event listeners
   setupEventListeners();
   
+  // Check for MetaMask via background script
+  const hasMetaMask = await checkMetaMask();
+  if (!hasMetaMask) {
+    showError('MetaMask not detected.\n\n✅ Quick Fix:\n1. Install MetaMask extension (https://metamask.io)\n2. Visit any DeFi website (like Uniswap.org)\n3. Click the RiskLens popup button');
+    return;
+  }
+  
   // Check for existing connection
   await checkExistingConnection();
+}
+
+/**
+ * Check if MetaMask is available via background script
+ */
+async function checkMetaMask() {
+  return new Promise((resolve) => {
+    chrome.runtime.sendMessage(
+      { action: 'checkMetaMask' },
+      (response) => {
+        if (chrome.runtime.lastError) {
+          console.warn('⚠️  Error checking MetaMask:', chrome.runtime.lastError);
+          resolve(false);
+        } else {
+          resolve(response?.hasMetaMask || false);
+        }
+      }
+    );
+  });
 }
 
 /**
@@ -73,11 +93,14 @@ function setupEventListeners() {
   elements.publishBtn.addEventListener('click', publishToRiskFeed);
   elements.newEvaluationBtn.addEventListener('click', resetToInput);
   
-  // Listen for network changes
-  if (window.ethereum.on) {
-    window.ethereum.on('chainChanged', handleChainChanged);
-    window.ethereum.on('accountsChanged', handleAccountsChanged);
-  }
+  // Listen for account/chain changes from background script
+  chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    if (request.type === 'CHAIN_CHANGED') {
+      handleChainChanged(request.chainId);
+    } else if (request.type === 'ACCOUNTS_CHANGED') {
+      handleAccountsChanged(request.accounts);
+    }
+  });
 }
 
 /**
@@ -85,9 +108,8 @@ function setupEventListeners() {
  */
 async function checkExistingConnection() {
   try {
-    const accounts = await window.ethereum.request({ 
-      method: 'eth_accounts' 
-    });
+    const result = await ethereumRequest({ method: 'eth_accounts' });
+    const accounts = result.error ? [] : (Array.isArray(result) ? result : []);
     
     if (accounts.length > 0) {
       await handleConnection(accounts);
@@ -98,34 +120,88 @@ async function checkExistingConnection() {
 }
 
 /**
- * Connect to MetaMask wallet
+ * Connect to MetaMask wallet via background script
  */
 async function connectWallet() {
   try {
-    const accounts = await window.ethereum.request({ 
-      method: 'eth_requestAccounts' 
-    });
+    console.log('🔗 Starting wallet connection...');
+    elements.connectWallet.disabled = true;
+    elements.connectWallet.textContent = 'Connecting...';
     
-    await handleConnection(accounts);
+    console.log('📤 Sending eth_requestAccounts request');
+    const result = await ethereumRequest({ method: 'eth_requestAccounts' });
+    
+    console.log('📥 Got response:', result);
+    
+    if (result.error) {
+      throw new Error(result.error);
+    }
+
+    if (!Array.isArray(result) || result.length === 0) {
+      throw new Error('No accounts returned from MetaMask');
+    }
+    
+    console.log('✅ Accounts received:', result);
+    await handleConnection(result);
   } catch (error) {
-    console.error('Connection error:', error);
-    showError('Failed to connect wallet: ' + error.message);
+    console.error('❌ Connection error:', error);
+    
+    // Provide more helpful error messages
+    let errorMsg = error.message;
+    
+    if (errorMsg.includes('No active tab')) {
+      errorMsg = '❌ No website is open.\n\n✅ Fix: Visit a website (any site works, e.g., google.com)';
+    } else if (errorMsg.includes('not allowed for messaging')) {
+      errorMsg = '❌ You\'re on an extension page or chrome:// page.\n\n✅ Fix: Visit a regular website (HTTP/HTTPS)';
+    } else if (errorMsg.includes('Content script not loaded')) {
+      errorMsg = '❌ MetaMask not detected on this page.\n\n✅ Fix: \n1. Make sure MetaMask is installed\n2. Reload the page (Ctrl+R)\n3. Try a DeFi site like Uniswap or PancakeSwap';
+    } else if (errorMsg.includes('not available on the current page')) {
+      errorMsg = '❌ MetaMask not installed or not available.\n\n✅ Fix: \n1. Install MetaMask from https://metamask.io\n2. Reload the page\n3. Try a DeFi website';
+    } else if (errorMsg.includes('timeout')) {
+      errorMsg = '❌ Connection timed out.\n\n✅ Fix:\n1. Make sure you\'re on a website\n2. MetaMask is installed and unlocked\n3. Try reloading the page (Ctrl+R)\n4. Check if MetaMask popup is showing';
+    }
+    
+    showError('Failed to connect:\n\n' + errorMsg);
+    elements.connectWallet.disabled = false;
+    elements.connectWallet.textContent = 'Connect MetaMask';
   }
+}
+
+/**
+ * Make Ethereum request via background script
+ */
+function ethereumRequest(payload) {
+  return new Promise((resolve) => {
+    const timeoutId = setTimeout(() => {
+      resolve({ error: 'Request timeout: Please make sure you have a website open with MetaMask' });
+    }, 12000); // 12 second timeout
+
+    chrome.runtime.sendMessage(
+      { action: 'ethereumRequest', payload },
+      (response) => {
+        clearTimeout(timeoutId);
+        if (chrome.runtime.lastError) {
+          resolve({ error: chrome.runtime.lastError.message });
+        } else {
+          resolve(response || {});
+        }
+      }
+    );
+  });
 }
 
 /**
  * Handle successful wallet connection
  */
 async function handleConnection(accounts) {
-  if (accounts.length === 0) return;
+  if (!Array.isArray(accounts) || accounts.length === 0) return;
   
   state.connected = true;
   state.walletAddress = accounts[0];
   
   // Get chain ID
-  state.chainId = await window.ethereum.request({ 
-    method: 'eth_chainId' 
-  });
+  const chainIdResult = await ethereumRequest({ method: 'eth_chainId' });
+  state.chainId = chainIdResult.error ? '0x38' : chainIdResult;
   
   // Update UI
   updateConnectionUI();
