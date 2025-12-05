@@ -11,9 +11,17 @@ export default function Install() {
           <h1 className="text-5xl font-bold mb-6 text-center">
             Install BNB RiskLens
           </h1>
-          <p className="text-xl text-gray-400 mb-12 text-center">
-            Get started in minutes with our Chrome extension
+          <p className="text-xl text-gray-400 mb-6 text-center">
+            Get proactive protection in minutes - see risk warnings BEFORE you click approve
           </p>
+          
+          {/* Feature Highlight */}
+          <div className="bg-primary/10 border border-primary/30 rounded-lg p-6 mb-12 text-center">
+            <p className="text-primary font-bold text-lg mb-2">⚡ Proactive Token Detection Enabled!</p>
+            <p className="text-gray-300">
+              Once installed, BNB RiskLens automatically scans DEX pages and shows risk badges BEFORE you click approve. Zero effort, maximum protection!
+            </p>
+          </div>
 
           {/* Chrome Web Store Button */}
           <div className="card text-center mb-12">
@@ -82,11 +90,11 @@ export default function Install() {
           </div>
 
           {/* Requirements */}
-          <div className="card">
+          <div className="card mb-8">
             <h2 className="text-2xl font-bold mb-4">📋 Requirements</h2>
             <ul className="space-y-2 text-gray-300">
               <li className="flex items-center gap-2">
-                <span className="text-success">✓</span> Google Chrome or Chromium-based browser
+                <span className="text-success">✓</span> Google Chrome or Chromium-based browser (Chrome, Brave, Edge)
               </li>
               <li className="flex items-center gap-2">
                 <span className="text-success">✓</span> MetaMask wallet extension installed
@@ -97,11 +105,33 @@ export default function Install() {
             </ul>
           </div>
 
+          {/* How to Use */}
+          <div className="card">
+            <h2 className="text-2xl font-bold mb-4">🚀 How to Use After Installation</h2>
+            <div className="space-y-4 text-gray-300">
+              <div>
+                <h3 className="font-semibold text-primary mb-2">Proactive Protection (Works Automatically!)</h3>
+                <p>Simply visit any DEX like PancakeSwap or Uniswap. BNB RiskLens will automatically:</p>
+                <ol className="mt-2 ml-5 space-y-1">
+                  <li>1. Detect token addresses when they appear on the page</li>
+                  <li>2. Evaluate risk instantly in the background</li>
+                  <li>3. Show color-coded badges: ✅ LOW / ⚠️ MEDIUM / 🚨 HIGH</li>
+                  <li>4. Display warnings BEFORE you click approve</li>
+                  <li>5. Click any badge to see detailed risk report</li>
+                </ol>
+              </div>
+              <div className="bg-primary/10 border border-primary/30 rounded-lg p-4 mt-4">
+                <p className="font-semibold text-primary mb-1">💡 Pro Tip:</p>
+                <p className="text-sm">You don't need to open the extension manually anymore. It works automatically in the background!</p>
+              </div>
+            </div>
+          </div>
+
           {/* Next Steps */}
           <div className="mt-12 text-center">
             <h3 className="text-xl font-bold mb-4">What's Next?</h3>
             <p className="text-gray-400 mb-6">
-              After installing, check out our documentation to learn how to use BNB RiskLens
+              Learn more about how automatic protection works and the 6 risk rules
             </p>
             <a href="/docs">
               <button className="btn-secondary">

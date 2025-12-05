@@ -128,6 +128,31 @@ async function connectWallet() {
     elements.connectWallet.disabled = true;
     elements.connectWallet.textContent = 'Connecting...';
     
+    // First, check if we're on a valid tab
+    const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+    
+    if (!tabs || tabs.length === 0) {
+      throw new Error('No active tab found. Please open a website first.');
+    }
+    
+    const currentTab = tabs[0];
+    const tabUrl = currentTab.url || '';
+    
+    console.log('📍 Current tab URL:', tabUrl);
+    
+    // Check if we're on a restricted page
+    if (tabUrl.startsWith('chrome://') || 
+        tabUrl.startsWith('chrome-extension://') ||
+        tabUrl.startsWith('edge://') ||
+        tabUrl.startsWith('about:') ||
+        tabUrl === '') {
+      throw new Error('RESTRICTED_PAGE');
+    }
+    
+    // Give content script a moment to inject into the page
+    console.log('⏳ Initializing...');
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
     console.log('📤 Sending eth_requestAccounts request');
     const result = await ethereumRequest({ method: 'eth_requestAccounts' });
     
@@ -149,16 +174,16 @@ async function connectWallet() {
     // Provide more helpful error messages
     let errorMsg = error.message;
     
-    if (errorMsg.includes('No active tab')) {
+    if (error.message === 'RESTRICTED_PAGE') {
+      errorMsg = '❌ Cannot connect from this page type.\n\n✅ Fix: \n1. Open a regular website (like google.com)\n2. Click the extension icon again\n3. Extensions don\'t work on chrome:// pages';
+    } else if (errorMsg.includes('No active tab')) {
       errorMsg = '❌ No website is open.\n\n✅ Fix: Visit a website (any site works, e.g., google.com)';
-    } else if (errorMsg.includes('not allowed for messaging')) {
-      errorMsg = '❌ You\'re on an extension page or chrome:// page.\n\n✅ Fix: Visit a regular website (HTTP/HTTPS)';
-    } else if (errorMsg.includes('Content script not loaded')) {
-      errorMsg = '❌ MetaMask not detected on this page.\n\n✅ Fix: \n1. Make sure MetaMask is installed\n2. Reload the page (Ctrl+R)\n3. Try a DeFi site like Uniswap or PancakeSwap';
-    } else if (errorMsg.includes('not available on the current page')) {
-      errorMsg = '❌ MetaMask not installed or not available.\n\n✅ Fix: \n1. Install MetaMask from https://metamask.io\n2. Reload the page\n3. Try a DeFi website';
-    } else if (errorMsg.includes('timeout')) {
-      errorMsg = '❌ Connection timed out.\n\n✅ Fix:\n1. Make sure you\'re on a website\n2. MetaMask is installed and unlocked\n3. Try reloading the page (Ctrl+R)\n4. Check if MetaMask popup is showing';
+    } else if (errorMsg.includes('MetaMask not detected')) {
+      errorMsg = '❌ MetaMask not detected.\n\n✅ Fix: \n1. Install MetaMask from https://metamask.io\n2. Reload this page (F5)\n3. Make sure MetaMask is unlocked\n4. Try again';
+    } else if (errorMsg.includes('timeout') || errorMsg.includes('Please make sure you have a website open')) {
+      errorMsg = '❌ Connection timed out.\n\n✅ Fix:\n1. Make sure MetaMask is installed and unlocked\n2. Reload the page (F5)\n3. Wait for page to fully load\n4. Try clicking Connect again';
+    } else if (errorMsg.includes('User rejected')) {
+      errorMsg = '❌ You cancelled the connection.\n\n✅ Click "Connect MetaMask" to try again.';
     }
     
     showError('Failed to connect:\n\n' + errorMsg);

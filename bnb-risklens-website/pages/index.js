@@ -18,13 +18,13 @@ export default function Home() {
             className="text-center max-w-4xl mx-auto"
           >
             <h1 className="text-6xl font-bold mb-6">
-              <span className="text-primary">Transparent</span> Token Risk
+              See Risk Warnings
               <br />
-              Evaluation for BNB Chain
+              <span className="text-primary">Before</span> You Click Approve
             </h1>
             <p className="text-xl text-gray-400 mb-10">
-              Protect your wallet with deterministic risk assessment. No black-box AI. 
-              Just clear, verifiable rules that expose scams and honeypots.
+              BNB RiskLens automatically detects tokens on DEX pages and shows risk badges BEFORE you interact. 
+              No black-box AI. Just clear, verifiable rules that expose scams and honeypots.
             </p>
             <div className="flex gap-4 justify-center">
               <Link href="/install">
@@ -55,29 +55,29 @@ export default function Home() {
           
           <div className="grid md:grid-cols-3 gap-8">
             <FeatureCard
-              icon="🔍"
+              icon="⚡"
+              title="Proactive Detection"
+              description="Automatically scans DEX pages for token addresses the moment they appear. No manual action needed!"
+            />
+            <FeatureCard
+              icon="🏷️"
+              title="Instant Risk Badges"
+              description="Shows color-coded badges (✅ LOW / ⚠️ MEDIUM / 🚨 HIGH) directly on the page BEFORE you click approve."
+            />
+            <FeatureCard
+              icon="�"
               title="6 Deterministic Rules"
               description="Transparent risk evaluation using clear, verifiable rules. No hidden algorithms or black-box scoring."
             />
             <FeatureCard
-              icon="🛡️"
-              title="SafeApprove Flow"
-              description="Temporarily approve exact amounts, execute transactions, then automatically reset to zero. Protect against wallet drainers."
-            />
-            <FeatureCard
               icon="📊"
-              title="On-Chain Risk Feed"
-              description="Publish and query risk assessments on-chain. Community-driven transparency for all BNB tokens."
+              title="Detailed Risk Reports"
+              description="Click any badge to see full analysis with specific issues, holder data, and liquidity checks."
             />
             <FeatureCard
-              icon="⚡"
-              title="Real-Time Analysis"
-              description="Instant on-chain data fetching with liquidity checks, holder counts, and contract verification."
-            />
-            <FeatureCard
-              icon="🎯"
-              title="Clear Risk Levels"
-              description="Simple LOW/MEDIUM/HIGH scoring with detailed explanations for every triggered rule."
+              icon="🛡️"
+              title="Non-Intrusive Protection"
+              description="Inline badges don't block your workflow. You stay informed without disruption."
             />
             <FeatureCard
               icon="🔓"
@@ -96,28 +96,28 @@ export default function Home() {
           <div className="max-w-3xl mx-auto space-y-8">
             <Step
               number="1"
-              title="Connect MetaMask"
-              description="Install the extension and connect your BNB Chain wallet."
+              title="Install Extension"
+              description="Install BNB RiskLens Chrome extension - it works automatically once installed."
             />
             <Step
               number="2"
-              title="Enter Token Address"
-              description="Paste the contract address of any token you want to evaluate."
+              title="Visit Any DEX"
+              description="Go to PancakeSwap, Uniswap, or any DeFi platform as you normally would."
             />
             <Step
               number="3"
-              title="Review Risk Assessment"
-              description="See which rules triggered, risk score, and detailed explanations."
+              title="See Risk Badges Automatically"
+              description="When tokens appear on the page, risk badges (✅/⚠️/🚨) appear instantly - BEFORE you click anything."
             />
             <Step
               number="4"
-              title="Use SafeApprove (Optional)"
-              description="For risky tokens, use SafeApprove to protect your wallet with temporary allowances."
+              title="Click Badge for Details"
+              description="Click any badge to see full risk report with specific issues, liquidity data, and holder info."
             />
             <Step
               number="5"
-              title="Publish to Risk Feed"
-              description="Share your assessment on-chain to help the community stay safe."
+              title="Make Informed Decisions"
+              description="Proceed confidently with safe tokens, or avoid risky ones - you're protected before any interaction!"
             />
           </div>
         </div>
@@ -126,13 +126,13 @@ export default function Home() {
       {/* CTA Section */}
       <section className="py-20 bg-light">
         <div className="container mx-auto px-6 text-center">
-          <h2 className="text-4xl font-bold mb-6">Ready to protect your wallet?</h2>
+          <h2 className="text-4xl font-bold mb-6">Ready for proactive protection?</h2>
           <p className="text-xl text-gray-400 mb-10">
-            Join thousands of users evaluating token risk with transparency.
+            See risk warnings the moment tokens appear - BEFORE you click approve. Zero effort, maximum protection.
           </p>
           <Link href="/install">
             <button className="btn-primary text-lg px-10 py-4">
-              Install BNB RiskLens Now
+              🛡️ Install BNB RiskLens Now
             </button>
           </Link>
         </div>
