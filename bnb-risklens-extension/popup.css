@@ -389,6 +389,41 @@ body {
   color: var(--text-primary);
 }
 
+.risk-summary {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 12px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.risk-summary.low {
+  border-left: 3px solid var(--success-color);
+  background: rgba(14, 203, 129, 0.05);
+}
+
+.risk-summary.medium {
+  border-left: 3px solid var(--warning-color);
+  background: rgba(240, 185, 11, 0.05);
+}
+
+.risk-summary.high {
+  border-left: 3px solid var(--danger-color);
+  background: rgba(246, 70, 93, 0.05);
+}
+
+.risk-icon {
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+.risk-summary p {
+  margin: 0;
+  color: var(--text-primary);
+  line-height: 1.6;
+}
+
 /* Safe Approve Section */
 .safe-approve {
   background: rgba(14, 203, 129, 0.05);

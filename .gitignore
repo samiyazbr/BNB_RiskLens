@@ -26,6 +26,9 @@ typechain-types/
 .env.test.local
 .env.production.local
 
+# API Keys (do not commit!)
+**/aiInterpreter.js
+
 # Logs
 npm-debug.log*
 yarn-debug.log*

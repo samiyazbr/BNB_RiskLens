@@ -53,12 +53,9 @@ async function initialize() {
   // Set up event listeners
   setupEventListeners();
   
-  // Check for MetaMask via background script
-  const hasMetaMask = await checkMetaMask();
-  if (!hasMetaMask) {
-    showError('MetaMask not detected.\n\n✅ Quick Fix:\n1. Install MetaMask extension (https://metamask.io)\n2. Visit any DeFi website (like Uniswap.org)\n3. Click the RiskLens popup button');
-    // Don't return here — allow user to attempt connection. handleEthereumRequest will wait for MetaMask injection.
-  }
+  // Skip MetaMask detection check - will check when user tries to connect
+  // This avoids false "not detected" errors when popup opens
+  console.log('✅ Extension ready - MetaMask will be checked on connection attempt');
   
   // Check for existing connection
   await checkExistingConnection();
@@ -81,6 +78,31 @@ async function checkMetaMask() {
       }
     );
   });
+}
+
+/**
+ * Check for MetaMask with retry logic (wait for injection)
+ * MetaMask can take a moment to inject into the page
+ */
+async function checkMetaMaskWithRetry(maxRetries = 3, delayMs = 300) {
+  console.log('🔍 Checking for MetaMask...');
+  
+  for (let i = 0; i < maxRetries; i++) {
+    const hasMetaMask = await checkMetaMask();
+    
+    if (hasMetaMask) {
+      console.log('✅ MetaMask detected!');
+      return true;
+    }
+    
+    if (i < maxRetries - 1) {
+      console.log(`⏳ MetaMask not detected, retrying in ${delayMs}ms... (${i + 1}/${maxRetries})`);
+      await new Promise(resolve => setTimeout(resolve, delayMs));
+    }
+  }
+  
+  console.warn('❌ MetaMask not detected after retries');
+  return false;
 }
 
 /**
@@ -178,8 +200,8 @@ async function connectWallet() {
       errorMsg = '❌ Cannot connect from this page type.\n\n✅ Fix: \n1. Open a regular website (like google.com)\n2. Click the extension icon again\n3. Extensions don\'t work on chrome:// pages';
     } else if (errorMsg.includes('No active tab')) {
       errorMsg = '❌ No website is open.\n\n✅ Fix: Visit a website (any site works, e.g., google.com)';
-    } else if (errorMsg.includes('MetaMask not detected')) {
-      errorMsg = '❌ MetaMask not detected.\n\n✅ Fix: \n1. Install MetaMask from https://metamask.io\n2. Reload this page (F5)\n3. Make sure MetaMask is unlocked\n4. Try again';
+    } else if (errorMsg.includes('MetaMask not detected') || errorMsg.includes('ethereum')) {
+      errorMsg = '❌ MetaMask Extension Required\n\n✅ To use BNB RiskLens:\n\n1. Install MetaMask browser extension\n   → Visit: https://metamask.io/download\n\n2. After installing MetaMask:\n   → Unlock your wallet\n   → Visit any website (e.g., uniswap.org)\n   → Click the BNB RiskLens icon again\n\n3. Click "Connect MetaMask" button\n\n💡 Tip: Extensions work best on regular websites, not on chrome:// pages';
     } else if (errorMsg.includes('timeout') || errorMsg.includes('Please make sure you have a website open')) {
       errorMsg = '❌ Connection timed out.\n\n✅ Fix:\n1. Make sure MetaMask is installed and unlocked\n2. Reload the page (F5)\n3. Wait for page to fully load\n4. Try clicking Connect again';
     } else if (errorMsg.includes('User rejected')) {

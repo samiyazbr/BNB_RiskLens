@@ -336,27 +336,30 @@ Display Results
 - `RiskUpdated` - Emitted when existing assessment is updated
 
 **Deployment:**
-- BNB Testnet: `[Address from deployment]`
+- BNB Testnet: `0xEFB805dEA95af016B0907a606b0E6C91988Af0e8`
 - BNB Mainnet: `Coming soon`
 
-### Demo Tokens
+### Demo Tokens (BNB Testnet)
 
 #### SafeToken.sol
-✅ Standard ERC20 implementation
-✅ Verified code patterns
-✅ No honeypot tricks
-✅ Safe for testing
+✅ Standard ERC20 implementation  
+✅ Verified code patterns  
+✅ No honeypot tricks  
+✅ Safe for testing  
+**Address:** `0x5a840787D29406F2Fc345a3C9660E55b85BD1a9e`
 
 #### MediumRiskToken.sol
-⚠️ New contract with low activity
-⚠️ Few holders (< 50)
-⚠️ Simulates early-stage token
+⚠️ New contract with low activity  
+⚠️ Few holders (< 50)  
+⚠️ Simulates early-stage token  
+**Address:** `0xeD20D6B4352D4DeD3Ba24433b56Fb4CFBeA8fef6`
 
 #### HoneypotToken.sol
-🚨 Trading restrictions enabled
-🚨 Only owner can transfer initially
-🚨 Classic honeypot pattern
-🚨 **FOR TESTING ONLY**
+🚨 Trading restrictions enabled  
+🚨 Only owner can transfer initially  
+🚨 Classic honeypot pattern  
+🚨 **FOR TESTING ONLY**  
+**Address:** `0x41F27B454eb379F4a3Cc5993aB85922e3fDF1e3e`
 
 ---
 
@@ -624,3 +627,7 @@ See our [public roadmap](https://github.com/samiyazbr/BNB_RiskLens/projects/1) f
 🔶 **BNB RiskLens** - *Transparency First, Safety Always*
 
 </div>
+honeypot token = 0x41F27B454eb379F4a3Cc5993aB85922e3fDF1e3e
+medium risk token = 0xeD20D6B4352D4DeD3Ba24433b56Fb4CFBeA8fef6
+safe token = 0x5a840787D29406F2Fc345a3C9660E55b85BD1a9e
+risk feed = 0xEFB805dEA95af016B0907a606b0E6C91988Af0e8
