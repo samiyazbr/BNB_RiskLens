@@ -57,7 +57,7 @@ async function initialize() {
   const hasMetaMask = await checkMetaMask();
   if (!hasMetaMask) {
     showError('MetaMask not detected.\n\n✅ Quick Fix:\n1. Install MetaMask extension (https://metamask.io)\n2. Visit any DeFi website (like Uniswap.org)\n3. Click the RiskLens popup button');
-    return;
+    // Don't return here — allow user to attempt connection. handleEthereumRequest will wait for MetaMask injection.
   }
   
   // Check for existing connection

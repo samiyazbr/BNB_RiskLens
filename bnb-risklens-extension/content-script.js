@@ -67,6 +67,20 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 });
 
 /**
+ * Wait for MetaMask to inject `window.ethereum` up to a timeout.
+ */
+async function waitForMetaMask(maxWaitTime = 5000, interval = 100) {
+  const start = Date.now();
+  while (Date.now() - start < maxWaitTime) {
+    if (typeof window !== 'undefined' && window.ethereum) {
+      return true;
+    }
+    await new Promise((r) => setTimeout(r, interval));
+  }
+  return false;
+}
+
+/**
  * Handle Ethereum RPC requests using the page's MetaMask provider
  */
 async function handleEthereumRequest(payload, sendResponse) {
@@ -79,10 +93,17 @@ async function handleEthereumRequest(payload, sendResponse) {
       return;
     }
 
+    // If MetaMask isn't available yet, wait a short while for it to inject.
+    // Many wallets (MetaMask) inject after the content script runs; poll briefly.
     if (!window.ethereum) {
-      debugLog('❌ window.ethereum is not available');
-      sendResponse({ error: 'MetaMask not available on the current page. Please visit a DeFi site or reload.' });
-      return;
+      debugLog('window.ethereum not found, waiting up to 5s for injection...');
+      const found = await waitForMetaMask(5000);
+      if (!found) {
+        debugLog('❌ window.ethereum did not appear within timeout');
+        sendResponse({ error: 'MetaMask not available on the current page. Please visit a DeFi site or reload.' });
+        return;
+      }
+      debugLog('window.ethereum appeared, proceeding with request');
     }
 
     const { method, params = [] } = payload;
