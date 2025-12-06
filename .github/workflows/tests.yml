@@ -1,0 +1,79 @@
+name: Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  contracts:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: contracts/package-lock.json
+    
+    - name: Install dependencies
+      working-directory: ./contracts
+      run: npm ci
+    
+    - name: Compile contracts
+      working-directory: ./contracts
+      run: npm run compile
+    
+    - name: Run tests
+      working-directory: ./contracts
+      run: npm test
+
+  website:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: bnb-risklens-website/package-lock.json
+    
+    - name: Install dependencies
+      working-directory: ./bnb-risklens-website
+      run: npm ci
+    
+    - name: Build website
+      working-directory: ./bnb-risklens-website
+      run: npm run build
+
+  extension:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Validate manifest.json
+      run: |
+        if ! jq empty bnb-risklens-extension/manifest.json; then
+          echo "Invalid manifest.json"
+          exit 1
+        fi
+        echo "✅ manifest.json is valid"
+    
+    - name: Check required files
+      run: |
+        files=("popup.html" "popup.js" "popup.css" "background.js" "content-script.js")
+        for file in "${files[@]}"; do
+          if [ ! -f "bnb-risklens-extension/$file" ]; then
+            echo "❌ Missing required file: $file"
+            exit 1
+          fi
+        done
+        echo "✅ All required extension files present"

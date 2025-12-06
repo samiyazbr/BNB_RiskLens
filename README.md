@@ -6,97 +6,251 @@
 [![Chrome Extension](https://img.shields.io/badge/Chrome-Extension-brightgreen)](https://github.com/samiyazbr/BNB_RiskLens)
 [![BNB Chain](https://img.shields.io/badge/BNB-Chain-F0B90B)](https://www.bnbchain.org/)
 
-BNB RiskLens is a comprehensive security tool that **automatically detects tokens on DEX pages** and shows risk badges using **deterministic, transparent rules**. No black-box machine learning. No hidden algorithms. Just proactive warnings with clear, verifiable risk assessment.
+> **🏆 Hackathon Demo Note:** This version demonstrates the concept using manual token address input and pre-deployed test tokens. The production vision (see [Full Vision](#-full-production-vision)) will automatically intercept---
 
-## 🎉 **Proactive Token Detection!**
+## 📜 Smart Contracts scan BSCScan API in real-time, and let users approve/reject directly through MetaMask integration.
 
-BNB RiskLens **automatically scans DEX pages** and shows risk badges the moment tokens appear - **BEFORE you click approve**!
+BNB RiskLens is a hackathon demo that shows how users can see clear, plain-English risk warnings before approving token interactions, using **deterministic, transparent rules**. No black-box ML. No hidden algorithms. The demo evaluates a token you provide and explains risks simply.
 
-- ✅ **Proactive Detection** - Scans pages for token addresses automatically
-- ✅ **Instant Risk Badges** - Shows ✅ LOW / ⚠️ MEDIUM / 🚨 HIGH inline badges
-- ✅ **See Warnings First** - Risk appears BEFORE you interact with approve buttons
-- ✅ **Zero Effort** - No need to manually open the extension or paste addresses
+---
+
+## 🖼️ Screenshots
+
+<table>
+<tr>
+<td width="50%">
+
+### Extension Popup - Risk Evaluation
+![Extension Demo](https://via.placeholder.com/400x300/1e293b/F0B90B?text=Extension+Popup+Demo)
+*Paste a token address and get instant risk analysis*
+
+</td>
+<td width="50%">
+
+### Risk Warning Display
+![Risk Warning](https://via.placeholder.com/400x300/fee2e2/991b1b?text=High+Risk+Warning)
+*Clear warnings in plain English before you approve*
+
+</td>
+</tr>
+</table>
+
+> **Note:** Replace placeholder images above with actual screenshots of your extension in action.
+
+---
+
+## 🎯 Browser Compatibility
+
+**Supported Browsers:**
+- ✅ **Google Chrome** 88+ (Manifest V3)
+- ✅ **Microsoft Edge** 88+ (Chromium-based)
+- ✅ **Brave Browser** 1.20+
+- ✅ **Opera** 74+ (Chromium-based)
+- ❌ Firefox (uses different extension API - future support planned)
+- ❌ Safari (different extension architecture - future support planned)
+
+**Recommended:** Chrome 110+ for best performance and full feature support.
+
+---
+
+## 🔍 The Problem We Solve
+
+Every day, crypto users lose millions to:
+- 🚨 **Honeypot scams** - You can buy, but can't sell
+- 💸 **Unlimited approvals** - Contracts drain your entire wallet
+- 🕵️ **Unverified contracts** - Hidden malicious code
+- 📉 **Rug pulls** - New tokens with no liquidity disappear overnight
+
+**BNB RiskLens stops these scams BEFORE they happen.**
 
 ---
 
 ## 📋 Table of Contents
 
+- [Screenshots](#️-screenshots)
+- [Browser Compatibility](#-browser-compatibility)
+- [The Problem We Solve](#-the-problem-we-solve)
+- [Current Demo (Hackathon)](#-current-demo-hackathon)
+- [Full Production Vision](#-full-production-vision)
 - [Overview](#overview)
 - [Features](#features)
 - [Project Structure](#project-structure)
 - [Installation](#installation)
+  - [Quick Start Guide](QUICKSTART.md) ⚡
 - [Usage](#usage)
 - [Architecture](#architecture)
 - [Smart Contracts](#smart-contracts)
 - [Risk Rules](#risk-rules)
 - [Development](#development)
-- [Deployment](#deployment)
 - [Contributing](#contributing)
+- [Testing](#testing)
+- [Changelog](#changelog)
 - [License](#license)
+
+---
+
+## 🧪 Current Demo (Hackathon)
+
+**For demonstration purposes**, this version works by:
+
+1. **Manual Input** - User pastes a token contract address into the extension
+2. **Test Tokens** - Three pre-deployed smart contracts on BNB Testnet:
+   - ✅ SafeToken (`0x5a840787D29406F2Fc345a3C9660E55b85BD1a9e`)
+   - ⚠️ MediumRiskToken (`0xeD20D6B4352D4DeD3Ba24433b56Fb4CFBeA8fef6`)
+   - 🚨 HoneypotToken (`0x41F27B454eb379F4a3Cc5993aB85922e3fDF1e3e`)
+3. **Evaluation** - Extension analyzes token using 6 deterministic rules
+4. **Results** - Shows risk level with AI-powered explanation in simple English
+
+**This demonstrates the core risk analysis engine and user experience.**
+
+---
+
+## 🚀 Full Production Vision
+
+> Note: Transaction interception is part of the production vision. The current hackathon demo uses manual address input and does not auto-intercept DEX transactions yet.
+
+### How Transaction Interception Will Work
+
+```
+1. User visits PancakeSwap/any DEX
+        ↓
+2. Clicks "Approve" or "Swap" button
+        ↓
+3. BNB RiskLens INTERCEPTS the transaction
+        ↓
+4. Extension queries BSCScan API for token data:
+   • Contract source code verification status
+   • Creation date & transaction count
+   • Holder count
+   • Bytecode analysis for honeypot patterns
+        ↓
+5. Risk Engine evaluates using deterministic rules
+        ↓
+6. Modal appears BEFORE MetaMask showing:
+   • Risk level: ✅ LOW / ⚠️ MEDIUM / 🚨 HIGH
+   • Plain English explanation of dangers
+   • Specific issues detected
+        ↓
+7. User decides: APPROVE or REJECT
+        ↓
+8. If approved: MetaMask opens for signature
+   If rejected: Transaction cancelled, wallet safe
+```
+
+### Key Improvements for Production (not in this demo)
+
+- 🔗 **Automatic Interception** - No manual address input needed
+- 🌐 **BSCScan API Integration** - Real-time data for ANY token
+- 🔄 **Live Transaction Scanning** - Works with ALL DEXs and dApps
+- 🦊 **Deep MetaMask Integration** - Seamless approve/reject flow
+- ⚡ **Sub-second Analysis** - Fast enough for real-time protection
+- 📱 **Multi-chain Support** - Ethereum, Polygon, Arbitrum, etc.
+
+### Why BSCScan API?
+
+The BSCScan API provides:
+- ✅ **Contract verification status** - Is source code published?
+- 📅 **Contract age** - When was it deployed?
+- 📊 **Transaction history** - How active is this token?
+- 👥 **Holder data** - How many people own it?
+- 🔍 **Bytecode access** - Can analyze for honeypot patterns
+
+This eliminates the need for users to manually input addresses or use test tokens.
 
 ---
 
 ## 🎯 Overview
 
+### Current Implementation (Hackathon Demo)
+
 BNB RiskLens consists of three main components:
 
-1. **Chrome Extension** - Browser extension for real-time token risk evaluation
-2. **Smart Contracts** - On-chain risk feed and demo tokens (Safe, Medium Risk, Honeypot)
+1. **Chrome Extension** - Browser extension with risk evaluation engine
+2. **Smart Contracts** - On-chain risk feed and demo tokens for testing
 3. **Website** - Documentation and landing page built with Next.js
 
-### Key Capabilities
+### Core Features
 
-- ⚡ **Proactive Token Detection** - Automatically scans DEX pages for token addresses
-- 🏷️ **Instant Risk Badges** - Visual badges (✅/⚠️/🚨) appear before you click approve
-- 🛡️ **Real-Time Protection** - Risk warnings shown BEFORE any interaction
-- 🔍 **6 Deterministic Risk Rules** - Transparent evaluation criteria
-- 🚨 **Unlimited Approval Warnings** - Big red alerts for dangerous permissions
-- 📊 **On-Chain Risk Feed** - Publish and query risk assessments on the blockchain
+- 🔍 **6 Deterministic Risk Rules** - Transparent, verifiable evaluation criteria
+- 🤖 **AI-Powered Explanations** - Complex risks explained in simple English
+- 🛡️ **Real-Time Analysis** - Instant risk assessment of any token
+- 📊 **Risk Feed** - Publish and query assessments on-chain
+- 🦊 **MetaMask Integration** - Connected to your wallet for transaction signing
 - 🔓 **100% Open Source** - All code is public and auditable
+
+### Technology Stack (demo)
+
+- **Frontend:** Vanilla JavaScript (Chrome Extension APIs)
+- **Smart Contracts:** Solidity 0.8.20, deployed on BNB Testnet
+- **Website:** Next.js 14, TailwindCSS
+- **AI:** OpenAI GPT-3.5-turbo via the extension background for user-friendly explanations
+- **Blockchain:** BNB Chain (Testnet for demo, Mainnet ready)
 
 ---
 
-## ✨ Features
+## ✨ Features (implemented in this repo)
 
-### 🎯 Automatic Transaction Interception
+### 🎯 Risk Analysis Engine (✅ Implemented)
 
-**The main feature!** BNB RiskLens automatically intercepts when you try to approve a token:
+The core of BNB RiskLens - evaluates tokens using 6 transparent, deterministic rules:
 
-1. **You visit any DEX** (PancakeSwap, Uniswap, etc.)
-2. **Click "Approve" or "Enable"** for a token
-3. **BNB RiskLens intercepts** before MetaMask
-4. **Beautiful modal appears** showing:
-   - Token address & spender contract
-   - Risk level: ✅ LOW / ⚠️ MEDIUM / 🚨 HIGH
-   - Specific issues detected
-   - Big warning for unlimited approvals
-5. **You decide:** Approve or Reject
-6. **Only then** does MetaMask appear (if you approved)
+- **R1: Unlimited Approval Detection** - Warns when contracts request unlimited spending
+- **R2: Unverified Contract Check** - Flags tokens without published source code  
+- **R3: New Token Detection** - Identifies contracts < 30 days old with low activity
+- **R4: Holder Count Analysis** - Warns about tokens with very few holders
+- **R5: Liquidity Check** - Detects low liquidity that makes selling difficult (basic heuristics for the demo)
+- **R6: Honeypot Pattern Detection** - Demo-only patterns to flag "buy but can't sell" risk
 
-### Chrome Extension
+**Risk Levels:**
+- ✅ **LOW (0-2 points)** - Token appears safe
+- ⚠️ **MEDIUM (3-4 points)** - Exercise caution
+- 🚨 **HIGH (5+ points)** - Dangerous, likely scam
 
-- 🔗 MetaMask integration
-- 🔍 Token risk evaluation with 6 deterministic rules
-- 🛡️ SafeApprove flow for secure approvals
-- 📊 Risk score visualization (LOW/MEDIUM/HIGH)
-- 📤 Publish assessments to on-chain Risk Feed
-- 💾 Local caching for performance
-- 🎨 Beautiful UI matching BNB Chain branding
+### 🤖 AI Explanations (✅ Implemented in demo)
 
-### Smart Contracts
+Complex technical risks translated into simple English:
 
-- **RiskFeed.sol** - On-chain risk reporting and querying
-- **SafeToken.sol** - Demo token with safe, verified behavior
-- **MediumRiskToken.sol** - Demo token with medium risk characteristics
-- **HoneypotToken.sol** - Demo honeypot token for testing
+**Instead of:**  
+> "Unverified Contract, Honeypot Bytecode Pattern detected"
 
-### Website
+**You see:**
+> "🚨 DANGER! You can buy this token but won't be able to sell - your money will be trapped forever. The source code is hidden so we can't verify it's safe. Click REJECT."
 
-- 🎨 Modern Next.js site with TailwindCSS
-- 📖 Comprehensive documentation
-- 🚀 Feature showcase
-- 📥 Installation guide
-- 🗺️ Public roadmap
+Powered by OpenAI GPT-3.5-turbo with custom prompts, called from the background worker. Requires you to add your API key in `bnb-risklens-extension/env.json`.
+
+### 🦊 MetaMask Integration (✅ Implemented in demo)
+
+- **Wallet Connection** - Seamless connection to MetaMask
+- **Transaction Signing** - Approve flows that trigger actual MetaMask signatures from the popup
+- **Multi-Account Support** - Works with all MetaMask accounts
+- **Network Detection** - Automatically detects BNB Chain
+
+### 📊 On-Chain Risk Feed (✅ Implemented for demo testing)
+
+Smart contract on BNB Testnet (`0xEFB805dEA95af016B0907a606b0E6C91988Af0e8`):
+
+- **Publish Assessments** - Share risk findings on-chain (demo contract on testnet)
+- **Query Reports** - See previously published reports (demo scope)
+- **Immutable Records** - All assessments permanently stored
+- **Community Protection** - Help others avoid scams
+
+### 🎨 User Interface (✅ Implemented in demo)
+
+- **Clean Design** - Matches BNB Chain branding
+- **Risk Visualization** - Clear color coding (green/yellow/red)
+- **Action Buttons** - Approve/reject decision making in the extension popup
+- **Responsive** - Works in extension popup
+
+### 📈 Future Features (Production Roadmap)
+ 
+- ⚡ **Auto-Interception** - Catch ALL transactions automatically
+- 🌐 **BSCScan API** - Real-time data for any token
+- 🔄 **Multi-DEX Support** - PancakeSwap, Uniswap, 1inch, etc.
+- 🌍 **Multi-chain** - Ethereum, Polygon, Arbitrum, Avalanche
+- 📱 **Mobile App** - iOS & Android support
+- 🗳️ **Community Voting** - Let users vote on risk assessments
+
+---
 
 ---
 
@@ -112,8 +266,7 @@ BNB_RiskLens/
 │   ├── src/
 │   │   ├── ruleEngine.js             # Rule evaluation logic
 │   │   ├── score.js                  # Risk scoring
-│   │   ├── aiInterpreter.js          # Cached explanations
-│   │   ├── safeApprove.js            # SafeApprove flow
+│   │   ├── aiInterpreter.js          # AI explanations
 │   │   └── utils/
 │   │       ├── fetchOnChainData.js   # Data fetching
 │   │       ├── liquidityCheck.js     # DEX liquidity
@@ -150,9 +303,13 @@ BNB_RiskLens/
 │   │   └── globals.css
 │   └── package.json
 │
-├── subscriber_example.js             # Risk Feed subscriber
-├── package.json                      # Root package.json
+├── .github/                          # GitHub config
+│   └── ISSUE_TEMPLATE/               # Issue templates
 ├── .gitignore
+├── CODE_OF_CONDUCT.md
+├── CONTRIBUTING.md
+├── LICENSE
+├── SECURITY.md
 └── README.md                         # This file
 ```
 
@@ -177,21 +334,46 @@ cd BNB_RiskLens
 ### Step 2: Install Dependencies
 
 ```bash
-# Install all dependencies (root, contracts, website)
+# Install all dependencies at once (recommended)
 npm run install:all
 
 # Or install individually:
-npm install                           # Root
-cd contracts && npm install           # Contracts
-cd ../bnb-risklens-website && npm install  # Website
+cd contracts && npm install
+cd ../bnb-risklens-website && npm install
+cd ..
 ```
 
 ### Step 3: Configure Environment
 
+#### Contracts
+
 ```bash
 cd contracts
 cp .env.example .env
-# Edit .env and add your private key for deployment
+# Edit .env and add your actual private key for deployment
+```
+
+#### Extension (OpenAI)
+
+The Chrome extension reads API keys from a bundled `env.json` or from local storage.
+
+```bash
+cd bnb-risklens-extension
+cp env.example.json env.json
+# Edit env.json and add:
+# {
+#   "OPENAI_API_KEY": "YOUR_OPENAI_API_KEY_HERE"
+# }
+```
+
+Alternatively, you can store the key via `chrome.storage.local` (future Options page will allow setting it from the UI).
+
+#### Website (Next.js)
+
+```bash
+cd bnb-risklens-website
+cp .env.example .env.local
+# Edit .env.local as needed for website configuration
 ```
 
 ### Step 4: Compile Smart Contracts
@@ -206,9 +388,11 @@ npm run compile
 # Make sure you have BNB testnet tokens
 # Get them from: https://testnet.bnbchain.org/faucet-smart
 
-npm run deploy
-# Or for local testing:
-# npm run deploy:local
+npm run deploy:testnet
+
+# For local testing:
+# Terminal 1: cd contracts && npm run node
+# Terminal 2: npm run deploy:local
 ```
 
 **Note the deployed addresses** - you'll need them for the extension!
@@ -245,19 +429,13 @@ npm run dev:website
    - Click "Evaluate Risk"
 
 3. **Review Results**
-   - Check the risk score (0-10)
+   - Check the risk level (LOW/MEDIUM/HIGH)
    - Review triggered rules
-   - Read the AI-generated explanation
+   - Read the AI-generated explanation (if API key is configured)
 
-4. **Use SafeApprove (for risky tokens)**
-   - Click "Use SafeApprove" if available
-   - Approve only the exact amount needed
-   - Extension will auto-reset to zero after transaction
-
-5. **Publish to Risk Feed**
-   - Click "Publish to Risk Feed"
-   - Sign the transaction in MetaMask
-   - Assessment is now on-chain!
+4. **Take Action**
+   - Click "Execute Approve" to proceed with MetaMask transaction
+   - Click "Reject" to cancel
 
 ### Testing with Demo Tokens
 
@@ -296,25 +474,11 @@ Calculate Risk Score
   • Assign risk level (LOW/MEDIUM/HIGH)
         ↓
 Generate Explanation
-  • Cached AI-style explanations
-  • Rule-specific details
+  • AI-powered simple English (if API key configured)
+  • Or fallback rule-based explanations
   • Actionable recommendations
         ↓
 Display Results
-```
-
-### SafeApprove Flow
-
-```
-1. User initiates SafeApprove
-        ↓
-2. Set temporary allowance (exact amount)
-        ↓
-3. User executes transaction
-        ↓
-4. Extension automatically resets allowance to 0
-        ↓
-5. Wallet protected from future drainage
 ```
 
 ---
@@ -416,9 +580,20 @@ Display Results
 ### Running Tests
 
 ```bash
+# Run smart contract tests
+npm run test
+
+# Or run directly in contracts folder
 cd contracts
 npx hardhat test
 ```
+
+**Current Test Coverage:**
+- ✅ RiskFeed contract: publish, query, update assessments
+- ✅ Demo tokens: SafeToken, MediumRiskToken, HoneypotToken
+- ✅ Token transfer and approval mechanics
+
+Tests run automatically on every push via GitHub Actions.
 
 ### Local Blockchain
 
@@ -431,24 +606,48 @@ npm run deploy:local
 
 ### Building the Extension
 
+The extension does not require a build step. Load it directly as unpacked in Chrome.
+
 ```bash
-npm run build:extension
-# Creates a .zip file in extension-build/
+# Extension is ready to use from bnb-risklens-extension/ folder
+# No build step needed - just load unpacked in Chrome
 ```
 
 ### Running the Website Locally
+
+The Next.js website provides documentation and project information.
 
 ```bash
 npm run dev:website
 # Visit http://localhost:3000
 ```
 
+**Website Status:** 🚧 Work in Progress
+- Landing page and basic docs are functional
+- Full feature showcase coming soon
+- Not yet deployed to production
+
+To build for production:
+```bash
+npm run build:website
+npm run start:website
+```
+
 ### Code Style
 
 - **JavaScript:** ES6+ with clear comments
-- **Solidity:** ^0.8.20 with NatSpec comments
+- **Solidity:** ^0.8.20 with NatSpec comments and SPDX headers
 - **React:** Functional components with hooks
 - **CSS:** TailwindCSS utility classes
+- **Formatting:** Prettier (config in `.prettierrc.json`)
+- **Linting:** ESLint for extension code
+
+Run linter:
+```bash
+# Extension linting (if you have ESLint installed globally)
+cd bnb-risklens-extension
+eslint *.js src/**/*.js
+```
 
 ---
 
@@ -522,7 +721,26 @@ node subscriber_example.js query 0xTokenAddress
 
 ---
 
-## 🤝 Contributing
+## � Testing
+
+See [TESTING.md](TESTING.md) for comprehensive testing guide.
+
+**Quick test:**
+```bash
+npm run test
+```
+
+All tests run automatically via GitHub Actions on every push.
+
+---
+
+## 📝 Changelog
+
+See [CHANGELOG.md](CHANGELOG.md) for version history and release notes.
+
+---
+
+## �🤝 Contributing
 
 We welcome contributions! Here's how you can help:
 
@@ -572,10 +790,25 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 
 - **BNB Chain** for the robust blockchain infrastructure
 - **MetaMask** for wallet integration
-- **PancakeSwap** for DEX liquidity data
+- **OpenAI** for GPT-3.5-turbo API
 - **OpenZeppelin** for smart contract security patterns
-- **Next.js** and **TailwindCSS** for the beautiful website
+- **Next.js** and **TailwindCSS** for the website
 - **The DeFi Community** for inspiration and feedback
+
+---
+
+## 📈 Project Status
+
+![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/samiyazbr/BNB_RiskLens/tests.yml?branch=main&label=tests)
+![GitHub](https://img.shields.io/github/license/samiyazbr/BNB_RiskLens)
+![GitHub issues](https://img.shields.io/github/issues/samiyazbr/BNB_RiskLens)
+![GitHub pull requests](https://img.shields.io/github/issues-pr/samiyazbr/BNB_RiskLens)
+
+**Current Version:** 1.0.0 (Hackathon Demo)  
+**Status:** Active Development  
+**Last Updated:** December 2025
+
+See [CHANGELOG.md](CHANGELOG.md) for version history.
 
 ---
 

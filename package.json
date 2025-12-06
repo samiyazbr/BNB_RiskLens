@@ -1,0 +1,38 @@
+{
+  "name": "bnb-risklens",
+  "version": "1.0.0",
+  "description": "Proactive protection against risky token interactions on BNB Chain",
+  "private": true,
+  "workspaces": [
+    "contracts",
+    "bnb-risklens-website"
+  ],
+  "scripts": {
+    "install:all": "npm install && cd contracts && npm install && cd ../bnb-risklens-website && npm install",
+    "compile": "cd contracts && npm run compile",
+    "test": "cd contracts && npm test",
+    "deploy:testnet": "cd contracts && npm run deploy:testnet",
+    "deploy:local": "cd contracts && npm run deploy:local",
+    "dev:website": "cd bnb-risklens-website && npm run dev",
+    "build:website": "cd bnb-risklens-website && npm run build",
+    "start:website": "cd bnb-risklens-website && npm start"
+  },
+  "keywords": [
+    "bnb-chain",
+    "defi",
+    "security",
+    "chrome-extension",
+    "smart-contracts",
+    "risk-assessment"
+  ],
+  "author": "BNB RiskLens Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/samiyazbr/BNB_RiskLens.git"
+  },
+  "bugs": {
+    "url": "https://github.com/samiyazbr/BNB_RiskLens/issues"
+  },
+  "homepage": "https://github.com/samiyazbr/BNB_RiskLens#readme"
+}

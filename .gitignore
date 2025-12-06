@@ -26,8 +26,10 @@ typechain-types/
 .env.test.local
 .env.production.local
 
-# API Keys (do not commit!)
-**/aiInterpreter.js
+# Extension environment (contains API keys)
+bnb-risklens-extension/env.json
+# Keep env.example.json for contributors
+!bnb-risklens-extension/env.example.json
 
 # Logs
 npm-debug.log*

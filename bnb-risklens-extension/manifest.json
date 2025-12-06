@@ -1,7 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "RiskLens Extension",
-  "version": "1.0",
+  "name": "BNB RiskLens",
+  "version": "1.0.0",
+  "description": "Proactive protection against risky token interactions on BNB Chain",
   "permissions": [
     "activeTab",
     "scripting",
@@ -36,6 +37,7 @@
       "resources": [
         "injected-eip6963.js",
         "proactive-monitor.js",
+        "env.json",
         "src/ruleEngine.js",
         "src/score.js",
         "src/utils/fetchOnChainData.js",

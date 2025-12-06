@@ -9,6 +9,37 @@ const ethereumCache = {
   chainId: null
 };
 
+// OpenAI API key management
+let OPENAI_API_KEY = null;
+async function loadEnvJsonKey() {
+  try {
+    const url = chrome.runtime.getURL('env.json');
+    const res = await fetch(url);
+    if (!res.ok) return;
+    const cfg = await res.json();
+    if (cfg && typeof cfg.OPENAI_API_KEY === 'string') {
+      OPENAI_API_KEY = cfg.OPENAI_API_KEY.trim();
+      console.log('[RiskLens BG] 🔑 Loaded OPENAI_API_KEY from env.json');
+    }
+  } catch (e) {
+    // ignore
+  }
+}
+async function loadKeyFromStorage() {
+  try {
+    const { OPENAI_API_KEY: stored } = await chrome.storage.local.get(['OPENAI_API_KEY']);
+    if (stored && typeof stored === 'string' && stored.trim()) {
+      OPENAI_API_KEY = stored.trim();
+      console.log('[RiskLens BG] 🔑 Loaded OPENAI_API_KEY from chrome.storage.local');
+    }
+  } catch (e) {}
+}
+// Initialize key on startup
+(async () => {
+  await loadEnvJsonKey();
+  await loadKeyFromStorage();
+})();
+
 // Extension initialization
 chrome.runtime.onInstalled.addListener(() => {
   console.log('🔶 BNB RiskLens Extension Installed');
@@ -564,12 +595,14 @@ async function handleOpenAIRequest(data, sendResponse) {
   const { apiKey, messages, maxTokens, temperature } = data;
   
   console.log('🤖 [Background] Received OpenAI request');
-  console.log('🤖 [Background] API Key present:', apiKey ? 'Yes (length: ' + apiKey.length + ')' : 'No');
+  console.log('🤖 [Background] API Key provided in request:', apiKey ? 'Yes' : 'No');
   console.log('🤖 [Background] Messages count:', messages?.length);
   
-  if (!apiKey) {
-    console.error('❌ [Background] No API key provided!');
-    sendResponse({ success: false, error: 'No API key provided' });
+  // Prefer request-provided key; otherwise use stored/loaded key
+  const effectiveKey = (apiKey && apiKey.trim()) || OPENAI_API_KEY;
+  if (!effectiveKey) {
+    console.error('❌ [Background] No API key available (provide in request or set in env.json / chrome.storage.local)');
+    sendResponse({ success: false, error: 'OPENAI_API_KEY not configured' });
     return;
   }
   
@@ -580,7 +613,7 @@ async function handleOpenAIRequest(data, sendResponse) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
+        'Authorization': `Bearer ${effectiveKey}`
       },
       body: JSON.stringify({
         model: 'gpt-3.5-turbo',
