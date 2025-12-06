@@ -55,6 +55,11 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       handleGetStoredRisks(sendResponse);
       return true;
     
+    case 'callOpenAI':
+      // Handle OpenAI API calls (to avoid CORS issues)
+      handleOpenAIRequest(request.data, sendResponse);
+      return true;
+    
     case 'updateEthereumCache':
       // Update cache from content script
       ethereumCache.accounts = request.data?.accounts || [];
@@ -548,6 +553,75 @@ async function handleTokenEvaluation(tokenAddress, sendResponse) {
     sendResponse({ 
       error: error.message,
       level: 'MEDIUM'
+    });
+  }
+}
+
+/**
+ * Handle OpenAI API requests from popup (to avoid CORS)
+ */
+async function handleOpenAIRequest(data, sendResponse) {
+  const { apiKey, messages, maxTokens, temperature } = data;
+  
+  console.log('🤖 [Background] Received OpenAI request');
+  console.log('🤖 [Background] API Key present:', apiKey ? 'Yes (length: ' + apiKey.length + ')' : 'No');
+  console.log('🤖 [Background] Messages count:', messages?.length);
+  
+  if (!apiKey) {
+    console.error('❌ [Background] No API key provided!');
+    sendResponse({ success: false, error: 'No API key provided' });
+    return;
+  }
+  
+  try {
+    console.log('📤 [Background] Calling OpenAI API...');
+    
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model: 'gpt-3.5-turbo',
+        messages: messages,
+        max_tokens: maxTokens || 250,
+        temperature: temperature || 0.8
+      })
+    });
+    
+    console.log('📥 [Background] OpenAI response status:', response.status);
+    
+    if (!response.ok) {
+      const error = await response.json();
+      console.error('❌ [Background] OpenAI API error:');
+      console.error('Full error object:', JSON.stringify(error, null, 2));
+      console.error('Error message:', error.error?.message);
+      console.error('Error type:', error.error?.type);
+      console.error('Error code:', error.error?.code);
+      
+      sendResponse({ 
+        success: false, 
+        error: error.error?.message || error.error?.type || response.statusText 
+      });
+      return;
+    }
+    
+    const responseData = await response.json();
+    const aiText = responseData.choices[0]?.message?.content || '';
+    
+    console.log('✅ [Background] OpenAI response received:', aiText.substring(0, 100) + '...');
+    
+    sendResponse({ 
+      success: true, 
+      text: aiText 
+    });
+    
+  } catch (error) {
+    console.error('❌ [Background] Exception calling OpenAI:', error);
+    sendResponse({ 
+      success: false, 
+      error: error.message 
     });
   }
 }

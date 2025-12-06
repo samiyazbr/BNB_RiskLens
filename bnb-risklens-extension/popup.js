@@ -35,6 +35,10 @@ const elements = {
   rulesTableBody: document.getElementById('rulesTableBody'),
   aiExplanation: document.getElementById('aiExplanation'),
   
+  actionButtons: document.getElementById('actionButtons'),
+  executeApproveBtn: document.getElementById('executeApproveBtn'),
+  rejectApproveBtn: document.getElementById('rejectApproveBtn'),
+  
   safeApproveSection: document.getElementById('safeApproveSection'),
   safeApproveBtn: document.getElementById('safeApproveBtn'),
   publishBtn: document.getElementById('publishBtn'),
@@ -111,6 +115,8 @@ async function checkMetaMaskWithRetry(maxRetries = 3, delayMs = 300) {
 function setupEventListeners() {
   elements.connectWallet.addEventListener('click', connectWallet);
   elements.evaluateBtn.addEventListener('click', evaluateRisk);
+  elements.executeApproveBtn.addEventListener('click', executeApprove);
+  elements.rejectApproveBtn.addEventListener('click', rejectApprove);
   elements.safeApproveBtn.addEventListener('click', executeSafeApprove);
   elements.publishBtn.addEventListener('click', publishToRiskFeed);
   elements.newEvaluationBtn.addEventListener('click', resetToInput);
@@ -344,8 +350,10 @@ async function evaluateRisk() {
     // Calculate risk score
     const riskScore = calculateRiskScore(ruleResults);
     
-    // Get AI explanation
-    const aiExplanation = getAIExplanation(ruleResults, riskScore);
+    // Get AI explanation (await the async function)
+    console.log('🤖 Getting AI explanation...');
+    const aiExplanation = await getAIExplanation(ruleResults, riskScore);
+    console.log('✅ AI explanation generated');
     
     // Store evaluation
     state.currentEvaluation = {
@@ -372,7 +380,7 @@ async function evaluateRisk() {
  * Display evaluation results
  */
 function displayResults() {
-  const { riskScore, ruleResults, aiExplanation } = state.currentEvaluation;
+  const { riskScore, ruleResults, aiExplanation, actionType } = state.currentEvaluation;
   
   // Hide loading, show results
   elements.loadingState.style.display = 'none';
@@ -392,8 +400,27 @@ function displayResults() {
   // Display AI explanation
   elements.aiExplanation.innerHTML = aiExplanation;
   
+  // Show approve/reject buttons for approve actions
+  if (actionType === 'approve') {
+    elements.actionButtons.style.display = 'flex';
+    
+    // Update button text based on risk level
+    if (riskScore.level === 'HIGH') {
+      elements.executeApproveBtn.textContent = '⚠️ Approve Anyway (Not Recommended)';
+      elements.executeApproveBtn.className = 'btn btn-danger';
+    } else if (riskScore.level === 'MEDIUM') {
+      elements.executeApproveBtn.textContent = '⚠️ Proceed with Caution';
+      elements.executeApproveBtn.className = 'btn btn-warning';
+    } else {
+      elements.executeApproveBtn.textContent = '✅ Approve Transaction';
+      elements.executeApproveBtn.className = 'btn btn-primary';
+    }
+  } else {
+    elements.actionButtons.style.display = 'none';
+  }
+  
   // Show SafeApprove option if applicable
-  if (state.currentEvaluation.actionType === 'approve' && riskScore.level !== 'LOW') {
+  if (actionType === 'approve' && riskScore.level !== 'LOW') {
     elements.safeApproveSection.style.display = 'block';
   } else {
     elements.safeApproveSection.style.display = 'none';
@@ -425,6 +452,79 @@ function displayRulesTable(ruleResults) {
     
     elements.rulesTableBody.appendChild(row);
   });
+}
+
+/**
+ * Execute approve transaction via MetaMask
+ */
+async function executeApprove() {
+  try {
+    const { tokenAddress, amount } = state.currentEvaluation;
+    
+    console.log('🔐 Executing approve transaction...');
+    elements.executeApproveBtn.disabled = true;
+    elements.executeApproveBtn.textContent = 'Waiting for approval...';
+    
+    // ERC20 approve function signature
+    const approveFunction = '0x095ea7b3'; // approve(address,uint256)
+    
+    // Encode spender address (you would get this from the dApp or user input)
+    // For now, using a placeholder - in production, this would come from the actual approval request
+    const spender = '0x0000000000000000000000000000000000000000'; // Placeholder
+    const spenderPadded = spender.slice(2).padStart(64, '0');
+    
+    // Encode amount
+    let amountHex;
+    if (amount === '' || amount === 'unlimited') {
+      // Unlimited approval: max uint256
+      amountHex = 'f'.repeat(64);
+    } else {
+      // Convert amount to hex (assuming 18 decimals for now)
+      const amountWei = BigInt(parseFloat(amount) * 1e18);
+      amountHex = amountWei.toString(16).padStart(64, '0');
+    }
+    
+    // Construct data
+    const data = approveFunction + spenderPadded + amountHex;
+    
+    // Send transaction via MetaMask
+    const txHash = await ethereumRequest({
+      method: 'eth_sendTransaction',
+      params: [{
+        from: state.walletAddress,
+        to: tokenAddress,
+        data: data,
+        gas: '0x' + (100000).toString(16), // 100k gas limit
+      }]
+    });
+    
+    if (txHash.error) {
+      throw new Error(txHash.error);
+    }
+    
+    console.log('✅ Transaction sent:', txHash);
+    alert(`✅ Approval transaction sent!\n\nTransaction Hash:\n${txHash}\n\nCheck your MetaMask for confirmation.`);
+    
+    // Reset
+    elements.executeApproveBtn.disabled = false;
+    elements.executeApproveBtn.textContent = '✅ Approve Transaction';
+    resetToInput();
+    
+  } catch (error) {
+    console.error('❌ Approve failed:', error);
+    alert(`❌ Approval failed:\n\n${error.message}`);
+    elements.executeApproveBtn.disabled = false;
+    elements.executeApproveBtn.textContent = '✅ Approve Transaction';
+  }
+}
+
+/**
+ * Reject the approval
+ */
+function rejectApprove() {
+  console.log('❌ User rejected approval');
+  alert('❌ Approval cancelled.\n\nYou made the smart choice! The token was not approved.');
+  resetToInput();
 }
 
 /**
